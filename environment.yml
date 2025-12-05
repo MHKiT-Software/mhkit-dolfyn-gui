@@ -1,11 +1,17 @@
-name: mhkit-gui
+name: mhkit-gui-qt
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python=3.11
   - pyqt>=6.4.0
   - mhkit=0.9.0
   - pyinstaller
+  - pyinstaller-hooks-contrib
   - matplotlib>=3.5.0
   - numpy>=1.20.0
+  - pytest>=7.0.0
+  # Let conda solver find compatible versions - force latest packages
+  - libnetcdf
+  - netcdf4
+  - hdf5
+  - jpeg
