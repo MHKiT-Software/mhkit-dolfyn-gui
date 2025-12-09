@@ -7,12 +7,12 @@ class WorkflowState:
     """Maintains state of the ADCP dataset throughout workflow steps"""
 
     def __init__(self):
-        self.raw_ds = None          # Original dataset after conversion
-        self.ds = None              # Working dataset (after QC steps)
-        self.ds_avg = None          # Averaged dataset
-        self.avg_tool = None        # ADPBinner instance
-        self.plots = {}             # Cached matplotlib figures
-        self.parameters = {}        # User-set parameters
+        self.raw_ds = None  # Original dataset after standardization
+        self.ds = None  # Working dataset (after QC steps)
+        self.ds_avg = None  # Averaged dataset
+        self.avg_tool = None  # ADPBinner instance
+        self.plots = {}  # Cached matplotlib figures
+        self.parameters = {}  # User-set parameters
 
     def reset(self):
         """Reset all state"""
