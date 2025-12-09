@@ -1,0 +1,72 @@
+name: Build Linux
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: "3.11"
+        channels: conda-forge
+        channel-priority: strict
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libxcb-xinerama0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-xkb1 \
+          libxkbcommon-x11-0 \
+          libdbus-1-3 \
+          libxcb-cursor0 \
+          libegl1 \
+          libgl1 \
+          xvfb
+
+    - name: Create conda environment
+      shell: bash -el {0}
+      run: |
+        conda env create -f environment.yml
+
+    - name: Build application
+      shell: bash -el {0}
+      run: |
+        conda activate mhkit-gui-qt
+        rm -rf build dist
+        pyinstaller mhkit_dolfyn_gui.spec
+
+    - name: Test bundled application
+      shell: bash -el {0}
+      run: |
+        conda activate mhkit-gui-qt
+        xvfb-run -a pytest tests/gui/test_conversion.py::TestBundledApp -v
+
+    - name: Create archive
+      shell: bash -el {0}
+      run: |
+        cd dist
+        tar -czf "MHKiT-DOLFyN-Linux.tar.gz" "MHKiT-DOLFyN"
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MHKiT-DOLFyN-Linux
+        path: dist/MHKiT-DOLFyN-Linux.tar.gz
+        retention-days: 30

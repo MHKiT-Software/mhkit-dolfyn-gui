@@ -1,0 +1,54 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: "3.11"
+        channels: conda-forge
+        channel-priority: strict
+
+    - name: Create conda environment
+      shell: bash -el {0}
+      run: |
+        conda env create -f environment.yml
+
+    - name: Build application
+      shell: bash -el {0}
+      run: |
+        conda activate mhkit-gui-qt
+        rm -rf build dist
+        pyinstaller mhkit_dolfyn_gui.spec
+
+    - name: Test bundled application
+      shell: bash -el {0}
+      run: |
+        conda activate mhkit-gui-qt
+        pytest tests/gui/test_conversion.py::TestBundledApp -v
+
+    - name: Create archive
+      shell: bash -el {0}
+      run: |
+        cd dist
+        7z a "MHKiT-DOLFyN-Windows.zip" "MHKiT-DOLFyN"
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MHKiT-DOLFyN-Windows
+        path: dist/MHKiT-DOLFyN-Windows.zip
+        retention-days: 30
