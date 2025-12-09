@@ -1,0 +1,175 @@
+{
+  "velds_properties": {
+    "u": {
+      "name": "velds.u",
+      "docstring": "The first velocity component.\n\nThis is simply a shortcut to self['vel'][0]. Therefore,\ndepending on the coordinate system of the data object\n(self.attrs['coord_sys']), it is:\n\n- beam:      beam1\n- inst:      x\n- earth:     east\n- principal: streamwise",
+      "attrs": {
+        "units": "m s-1",
+        "coverage_content_type": "physicalMeasurement",
+        "long_name": "Water Velocity"
+      },
+      "dims": [
+        "range",
+        "time"
+      ]
+    },
+    "v": {
+      "name": "velds.v",
+      "docstring": "The second velocity component.\n\nThis is simply a shortcut to self['vel'][1]. Therefore,\ndepending on the coordinate system of the data object\n(self.attrs['coord_sys']), it is:\n\n- beam:      beam2\n- inst:      y\n- earth:     north\n- principal: cross-stream",
+      "attrs": {
+        "units": "m s-1",
+        "coverage_content_type": "physicalMeasurement",
+        "long_name": "Water Velocity"
+      },
+      "dims": [
+        "range",
+        "time"
+      ]
+    },
+    "w": {
+      "name": "velds.w",
+      "docstring": "The third velocity component.\n\nThis is simply a shortcut to self['vel'][2]. Therefore,\ndepending on the coordinate system of the data object\n(self.attrs['coord_sys']), it is:\n\n- beam:      beam3\n- inst:      z\n- earth:     up\n- principal: up",
+      "attrs": {
+        "units": "m s-1",
+        "coverage_content_type": "physicalMeasurement",
+        "long_name": "Water Velocity"
+      },
+      "dims": [
+        "range",
+        "time"
+      ]
+    },
+    "U": {
+      "name": "velds.U",
+      "docstring": "Horizontal velocity as a complex quantity",
+      "attrs": {
+        "units": "m s-1",
+        "long_name": "Horizontal Water Velocity"
+      },
+      "dims": [
+        "range",
+        "time"
+      ]
+    },
+    "U_mag": {
+      "name": "velds.U_mag",
+      "docstring": "Horizontal velocity magnitude",
+      "attrs": {
+        "units": "m s-1",
+        "long_name": "Water Speed",
+        "standard_name": "sea_water_speed"
+      },
+      "dims": [
+        "range",
+        "time"
+      ]
+    },
+    "U_dir": {
+      "name": "velds.U_dir",
+      "docstring": "Angle of horizontal velocity vector. Direction is 'to',\nas opposed to 'from'. This function calculates angle as\n\"degrees CCW from X/East/streamwise\" and then converts it to\n\"degrees CW from X/North/streamwise\".",
+      "attrs": {
+        "units": "degree",
+        "long_name": "Water Direction, CW from N",
+        "standard_name": "sea_water_to_direction"
+      },
+      "dims": [
+        "range",
+        "time"
+      ]
+    }
+  },
+  "dataset_variables": {
+    "vel": {
+      "name": "vel",
+      "attrs": {
+        "units": "m s-1",
+        "coverage_content_type": "physicalMeasurement",
+        "long_name": "Water Velocity"
+      },
+      "dims": [
+        "dir",
+        "range",
+        "time"
+      ]
+    },
+    "time": {
+      "name": "time",
+      "attrs": {
+        "coverage_content_type": "coordinate",
+        "long_name": "Time",
+        "standard_name": "time"
+      },
+      "dims": [
+        "time"
+      ]
+    },
+    "range": {
+      "name": "range",
+      "attrs": {
+        "coverage_content_type": "coordinate",
+        "units": "m",
+        "long_name": "Profile Range",
+        "description": "Distance to the center of each depth bin"
+      },
+      "dims": [
+        "range"
+      ]
+    },
+    "heading": {
+      "name": "heading",
+      "attrs": {
+        "units": "degree",
+        "long_name": "Heading",
+        "standard_name": "platform_orientation"
+      },
+      "dims": [
+        "time"
+      ]
+    },
+    "pitch": {
+      "name": "pitch",
+      "attrs": {
+        "units": "degree",
+        "long_name": "Pitch",
+        "standard_name": "platform_pitch"
+      },
+      "dims": [
+        "time"
+      ]
+    },
+    "roll": {
+      "name": "roll",
+      "attrs": {
+        "units": "degree",
+        "long_name": "Roll",
+        "standard_name": "platform_roll"
+      },
+      "dims": [
+        "time"
+      ]
+    },
+    "temp": {
+      "name": "temp",
+      "attrs": {
+        "units": "degree_C",
+        "long_name": "Temperature",
+        "standard_name": "sea_water_temperature"
+      },
+      "dims": [
+        "time"
+      ]
+    },
+    "pressure": {
+      "name": "pressure",
+      "attrs": {
+        "units": "dbar",
+        "long_name": "Pressure",
+        "standard_name": "sea_water_pressure"
+      },
+      "dims": [
+        "time"
+      ]
+    }
+  },
+  "example_data_path": "/Users/asimms/Desktop/Programming/mhkit_python_simms_dev/MHKiT-Python/examples/data/dolfyn"
+}
