@@ -1,21 +1,34 @@
 """
-MHKiT Dolfyn ADCP Converter - PyQt6 GUI
-Simple GUI for converting ADCP files to NetCDF using mhkit.dolfyn
+MHKiT Dolfyn ADCP Standardizer - PyQt6 GUI
+Simple GUI for standardizing ADCP files to NetCDF using mhkit.dolfyn
 """
 
 import sys
 from pathlib import Path
+
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QFileDialog, QProgressBar, QTextEdit,
-    QGroupBox, QCheckBox, QSpinBox, QComboBox, QLineEdit
+    QApplication,
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QFileDialog,
+    QProgressBar,
+    QTextEdit,
+    QGroupBox,
+    QCheckBox,
+    QSpinBox,
+    QLineEdit,
 )
 from PyQt6.QtCore import QThread, pyqtSignal, Qt
 from PyQt6.QtGui import QFont
 
 
-class ConversionWorker(QThread):
-    """Background thread for file conversion to keep GUI responsive"""
+class StandardizeWorker(QThread):
+    """Background thread for file standardization to keep GUI responsive"""
+
     progress = pyqtSignal(str)  # Status messages
     finished = pyqtSignal(bool, str)  # Success flag, message
 

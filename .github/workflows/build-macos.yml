@@ -10,6 +10,7 @@ on:
 jobs:
   build-macos:
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-13, macos-14]  # Intel (13) and Apple Silicon (14)
 
@@ -29,6 +30,7 @@ jobs:
     - name: Create conda environment
       shell: bash -el {0}
       run: |
+        conda config --set channel_priority flexible
         conda env create -f environment.yml
 
     - name: Build application
