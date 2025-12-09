@@ -3,13 +3,18 @@ Base UI widgets - theme-aware, reusable components
 """
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QToolButton, QFrame, QSizePolicy
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QToolButton,
+    QSizePolicy,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QDoubleValidator, QIntValidator, QPalette
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
-from matplotlib.figure import Figure
+
+# Note: matplotlib imports are deferred to MatplotlibCanvas.__init__ to speed up startup
 
 
 class ParameterInput(QWidget):
@@ -29,8 +34,17 @@ class ParameterInput(QWidget):
 
     valueChanged = pyqtSignal(float)
 
-    def __init__(self, label, unit="", default=0.0, min_val=None, max_val=None,
-                 decimals=2, tooltip="", param_type="float"):
+    def __init__(
+        self,
+        label,
+        unit="",
+        default=0.0,
+        min_val=None,
+        max_val=None,
+        decimals=2,
+        tooltip="",
+        param_type="float",
+    ):
         super().__init__()
         self.param_type = param_type
         self.min_val = min_val
@@ -73,8 +87,12 @@ class ParameterInput(QWidget):
         if unit:
             self.unit_label = QLabel(unit)
             palette = self.unit_label.palette()
-            palette.setColor(QPalette.ColorRole.WindowText,
-                           palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText))
+            palette.setColor(
+                QPalette.ColorRole.WindowText,
+                palette.color(
+                    QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText
+                ),
+            )
             self.unit_label.setPalette(palette)
             layout.addWidget(self.unit_label)
 
@@ -128,9 +146,11 @@ class ParameterInput(QWidget):
 class CollapsibleSection(QWidget):
     """Collapsible section widget with title bar and content area"""
 
-    def __init__(self, title="", parent=None):
+    def __init__(self, title="", expanded=True, parent=None):
         super().__init__(parent)
-        self.is_expanded = True
+        self.is_expanded = expanded
+        self._base_title = title
+        self._is_active = False
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -138,12 +158,18 @@ class CollapsibleSection(QWidget):
 
         # Toggle button
         self.toggle_button = QToolButton()
-        self.toggle_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.toggle_button.setArrowType(Qt.ArrowType.DownArrow)
+        self.toggle_button.setToolButtonStyle(
+            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
+        self.toggle_button.setArrowType(
+            Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow
+        )
         self.toggle_button.setText(title)
         self.toggle_button.setCheckable(True)
-        self.toggle_button.setChecked(True)
-        self.toggle_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.toggle_button.setChecked(expanded)
+        self.toggle_button.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
 
         font = self.toggle_button.font()
         font.setBold(True)
@@ -156,13 +182,8 @@ class CollapsibleSection(QWidget):
         self.content_area = QWidget()
         self.content_layout = QVBoxLayout(self.content_area)
         self.content_layout.setContentsMargins(20, 10, 10, 10)
+        self.content_area.setVisible(expanded)
         main_layout.addWidget(self.content_area)
-
-        # Separator
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setFrameShadow(QFrame.Shadow.Sunken)
-        main_layout.addWidget(line)
 
     def toggle(self):
         self.is_expanded = not self.is_expanded
@@ -179,12 +200,27 @@ class CollapsibleSection(QWidget):
     def add_layout(self, layout):
         self.content_layout.addLayout(layout)
 
+    def set_active(self, active: bool):
+        """Update section title to show active/inactive state"""
+        self._is_active = active
+        if active:
+            self.toggle_button.setText(f"{self._base_title} [Enabled]")
+        else:
+            self.toggle_button.setText(self._base_title)
+
 
 class MatplotlibCanvas(QWidget):
     """Matplotlib figure embedded in Qt widget with navigation toolbar"""
 
     def __init__(self, parent=None, width=8, height=6, dpi=100):
         super().__init__(parent)
+
+        # Defer matplotlib import to first use for faster app startup
+        from matplotlib.backends.backend_qtagg import (
+            FigureCanvasQTAgg,
+            NavigationToolbar2QT,
+        )
+        from matplotlib.figure import Figure
 
         self.figure = Figure(figsize=(width, height), dpi=dpi)
         self.canvas = FigureCanvasQTAgg(self.figure)
@@ -218,4 +254,4 @@ class MatplotlibCanvas(QWidget):
         self.refresh()
 
     def save_figure(self, filename):
-        self.figure.savefig(filename, dpi=300, bbox_inches='tight')
+        self.figure.savefig(filename, dpi=300, bbox_inches="tight")
