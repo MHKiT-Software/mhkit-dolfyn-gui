@@ -8,10 +8,7 @@
         "coverage_content_type": "physicalMeasurement",
         "long_name": "Water Velocity"
       },
-      "dims": [
-        "range",
-        "time"
-      ]
+      "dims": ["range", "time"]
     },
     "v": {
       "name": "velds.v",
@@ -21,10 +18,7 @@
         "coverage_content_type": "physicalMeasurement",
         "long_name": "Water Velocity"
       },
-      "dims": [
-        "range",
-        "time"
-      ]
+      "dims": ["range", "time"]
     },
     "w": {
       "name": "velds.w",
@@ -34,10 +28,7 @@
         "coverage_content_type": "physicalMeasurement",
         "long_name": "Water Velocity"
       },
-      "dims": [
-        "range",
-        "time"
-      ]
+      "dims": ["range", "time"]
     },
     "U": {
       "name": "velds.U",
@@ -46,10 +37,7 @@
         "units": "m s-1",
         "long_name": "Horizontal Water Velocity"
       },
-      "dims": [
-        "range",
-        "time"
-      ]
+      "dims": ["range", "time"]
     },
     "U_mag": {
       "name": "velds.U_mag",
@@ -59,10 +47,7 @@
         "long_name": "Water Speed",
         "standard_name": "sea_water_speed"
       },
-      "dims": [
-        "range",
-        "time"
-      ]
+      "dims": ["range", "time"]
     },
     "U_dir": {
       "name": "velds.U_dir",
@@ -72,10 +57,7 @@
         "long_name": "Water Direction, CW from N",
         "standard_name": "sea_water_to_direction"
       },
-      "dims": [
-        "range",
-        "time"
-      ]
+      "dims": ["range", "time"]
     }
   },
   "dataset_variables": {
@@ -86,11 +68,7 @@
         "coverage_content_type": "physicalMeasurement",
         "long_name": "Water Velocity"
       },
-      "dims": [
-        "dir",
-        "range",
-        "time"
-      ]
+      "dims": ["dir", "range", "time"]
     },
     "time": {
       "name": "time",
@@ -99,9 +77,7 @@
         "long_name": "Time",
         "standard_name": "time"
       },
-      "dims": [
-        "time"
-      ]
+      "dims": ["time"]
     },
     "range": {
       "name": "range",
@@ -111,9 +87,7 @@
         "long_name": "Profile Range",
         "description": "Distance to the center of each depth bin"
       },
-      "dims": [
-        "range"
-      ]
+      "dims": ["range"]
     },
     "heading": {
       "name": "heading",
@@ -122,9 +96,7 @@
         "long_name": "Heading",
         "standard_name": "platform_orientation"
       },
-      "dims": [
-        "time"
-      ]
+      "dims": ["time"]
     },
     "pitch": {
       "name": "pitch",
@@ -133,9 +105,7 @@
         "long_name": "Pitch",
         "standard_name": "platform_pitch"
       },
-      "dims": [
-        "time"
-      ]
+      "dims": ["time"]
     },
     "roll": {
       "name": "roll",
@@ -144,9 +114,7 @@
         "long_name": "Roll",
         "standard_name": "platform_roll"
       },
-      "dims": [
-        "time"
-      ]
+      "dims": ["time"]
     },
     "temp": {
       "name": "temp",
@@ -155,9 +123,7 @@
         "long_name": "Temperature",
         "standard_name": "sea_water_temperature"
       },
-      "dims": [
-        "time"
-      ]
+      "dims": ["time"]
     },
     "pressure": {
       "name": "pressure",
@@ -166,9 +132,7 @@
         "long_name": "Pressure",
         "standard_name": "sea_water_pressure"
       },
-      "dims": [
-        "time"
-      ]
+      "dims": ["time"]
     }
   },
   "example_data_path": "/Users/asimms/Desktop/Programming/mhkit_python_simms_dev/MHKiT-Python/examples/data/dolfyn"
