@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=MHKiT-DOLFyN
+Comment=ADCP data converter using MHKiT DOLFyN
+Exec=mhkit-dolfyn %F
+Icon=mhkit-dolfyn
+Terminal=false
+Categories=Science;DataVisualization;
+MimeType=application/x-netcdf;
+Keywords=ADCP;oceanography;dolfyn;mhkit;converter;
