@@ -10,6 +10,7 @@ dependencies:
   - matplotlib>=3.5.0
   - numpy>=1.20.0
   - pytest>=7.0.0
+  - pillow>=9.0.0  # For icon generation scripts
   # Let conda solver find compatible versions - force latest packages
   - libnetcdf
   - netcdf4
