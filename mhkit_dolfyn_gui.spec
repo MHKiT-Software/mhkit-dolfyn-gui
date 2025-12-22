@@ -50,6 +50,75 @@ if conda_prefix and sys.platform == 'darwin':
             print(f"Found jpeg library: {jpeg_path}")
             break
 
+# Packages to exclude - these are either unused or have large unused components
+EXCLUDES = [
+    'PySide6',
+    # sklearn is not used by dolfyn
+    'sklearn',
+    'scikit-learn',
+    # Unused test frameworks and testing utilities
+    'pytest',
+    'pytest_cov',
+    'coverage',
+    'hypothesis',
+    'unittest',
+    # Development tools not needed at runtime
+    'pip',
+    'setuptools',
+    'wheel',
+    'pkg_resources',
+    # Unused matplotlib backends
+    'matplotlib.backends.backend_tkagg',
+    'matplotlib.backends.backend_gtk3agg',
+    'matplotlib.backends.backend_gtk4agg',
+    'matplotlib.backends.backend_wxagg',
+    'matplotlib.backends.backend_cairo',
+    'matplotlib.backends.backend_pdf',
+    'matplotlib.backends.backend_pgf',
+    'matplotlib.backends.backend_ps',
+    'matplotlib.backends.backend_svg',
+    'matplotlib.backends.backend_webagg',
+    'matplotlib.backends.backend_nbagg',
+    # Tkinter
+    'tkinter',
+    '_tkinter',
+    'Tkinter',
+    # IPython/Jupyter
+    'IPython',
+    'jupyter',
+    'notebook',
+    'ipykernel',
+    'ipywidgets',
+    # Unused Qt modules
+    'PyQt6.QtBluetooth',
+    'PyQt6.QtDBus',
+    'PyQt6.QtDesigner',
+    'PyQt6.QtHelp',
+    'PyQt6.QtMultimedia',
+    'PyQt6.QtMultimediaWidgets',
+    'PyQt6.QtNetwork',
+    'PyQt6.QtNfc',
+    'PyQt6.QtOpenGL',
+    'PyQt6.QtOpenGLWidgets',
+    'PyQt6.QtPositioning',
+    'PyQt6.QtPrintSupport',
+    'PyQt6.QtQml',
+    'PyQt6.QtQuick',
+    'PyQt6.QtQuickWidgets',
+    'PyQt6.QtRemoteObjects',
+    'PyQt6.QtSensors',
+    'PyQt6.QtSerialPort',
+    'PyQt6.QtSpatialAudio',
+    'PyQt6.QtSql',
+    'PyQt6.QtTest',
+    'PyQt6.QtWebChannel',
+    'PyQt6.QtWebEngineCore',
+    'PyQt6.QtWebEngineQuick',
+    'PyQt6.QtWebEngineWidgets',
+    'PyQt6.QtWebSockets',
+    'PyQt6.QtXml',
+]
+
 a = Analysis(
     ['main.py'],
     pathex=[],
@@ -79,7 +148,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['PySide6'],
+    excludes=EXCLUDES,
     noarchive=False,
     optimize=0,
 )
