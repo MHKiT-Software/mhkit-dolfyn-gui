@@ -81,41 +81,19 @@ jobs:
         run: |
           mv "dist/MHKiT-DOLFyN.exe" "dist/MHKiT-DOLFyN-Windows.exe"
 
-      - name: Upload artifact (CI builds)
+      - name: Upload artifact (CI builds only)
         if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Windows
           path: dist/MHKiT-DOLFyN-Windows.zip
-          retention-days: 30
+          retention-days: 3
 
-      - name: Upload artifact (release builds)
+      - name: Upload to GitHub Release
         if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows
-          path: dist/MHKiT-DOLFyN-Windows.exe
-          retention-days: 30
-
-  # Add to GitHub Release
-  release:
-    needs: [prepare, build]
-    if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create or update release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.tag_name }}
           name: ${{ needs.prepare.outputs.release_name }}
           prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
-          files: |
-            artifacts/Windows/MHKiT-DOLFyN-Windows.exe
+          files: dist/MHKiT-DOLFyN-Windows.exe

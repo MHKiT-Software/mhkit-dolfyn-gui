@@ -91,40 +91,19 @@ jobs:
           cd dist
           zip -r "${APP_NAME}-macOS-${{ matrix.arch_label }}.zip" "${APP_NAME}.app"
 
-      - name: Upload artifact
+      - name: Upload artifact (CI builds only)
+        if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: macOS-${{ matrix.arch_label }}
           path: dist/${{ needs.prepare.outputs.app_name }}-macOS-${{ matrix.arch_label }}.zip
-          retention-days: 30
+          retention-days: 3
 
-  # Add to GitHub Release
-  release:
-    needs: [prepare, build]
-    if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create or update release
+      - name: Upload to GitHub Release
+        if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.tag_name }}
           name: ${{ needs.prepare.outputs.release_name }}
           prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
-          files: |
-            artifacts/macOS-AppleSilicon/${{ needs.prepare.outputs.app_name }}-macOS-AppleSilicon.zip
-            artifacts/macOS-Intel/${{ needs.prepare.outputs.app_name }}-macOS-Intel.zip
-
-      - name: Delete artifacts after release
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: |
-            macOS-AppleSilicon
-            macOS-Intel
+          files: dist/${{ needs.prepare.outputs.app_name }}-macOS-${{ matrix.arch_label }}.zip
