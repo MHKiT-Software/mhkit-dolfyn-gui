@@ -5,6 +5,7 @@ Batch standardization of original ADCP/ADV files to NetCDF using MHKiT-DOLFyN
 """
 
 import sys
+import tomllib
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication,
@@ -19,8 +20,16 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QAction, QIcon, QPixmap, QCursor, QPalette, QDesktopServices
 from PyQt6.QtCore import Qt, QUrl
 
-# Version number
-__version__ = "1.0.1"
+
+def _get_version() -> str:
+    """Get version from pyproject.toml."""
+    pyproject_path = Path(__file__).parent / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        data = tomllib.load(f)
+    return data["project"]["version"]
+
+
+__version__ = _get_version()
 
 # Note: Heavy imports (components, StandardizeMode) are deferred until after
 # splash screen is shown in main() to improve perceived startup time.
