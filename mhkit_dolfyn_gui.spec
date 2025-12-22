@@ -207,7 +207,7 @@ else:
         exe,
         a.binaries,
         a.datas,
-        strip=False,
+        strip=True,  # Strip debug symbols to reduce binary size
         upx=True,
         upx_exclude=[],
         name=APP_NAME,
