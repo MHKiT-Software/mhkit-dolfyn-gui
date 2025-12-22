@@ -121,3 +121,10 @@ jobs:
           files: |
             artifacts/macOS-AppleSilicon/${{ needs.prepare.outputs.app_name }}-macOS-AppleSilicon.zip
             artifacts/macOS-Intel/${{ needs.prepare.outputs.app_name }}-macOS-Intel.zip
+
+      - name: Delete artifacts after release
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            macOS-AppleSilicon
+            macOS-Intel
