@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Extract version and release info for GitHub Actions workflows.
 
@@ -9,8 +8,7 @@ Outputs GitHub Actions format to stdout (append to $GITHUB_OUTPUT).
 """
 
 import argparse
-import re
-import sys
+import tomllib
 from pathlib import Path
 
 # Global application name - used across all workflows
@@ -18,14 +16,11 @@ APP_NAME = "MHKiT-DOLFyN"
 
 
 def get_version() -> str:
-    """Extract __version__ from main.py."""
-    main_py = Path(__file__).parent.parent / "main.py"
-    content = main_py.read_text()
-    match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
-    if not match:
-        print("Error: Could not find __version__ in main.py", file=sys.stderr)
-        sys.exit(1)
-    return match.group(1)
+    """Get version from pyproject.toml."""
+    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        data = tomllib.load(f)
+    return data["project"]["version"]
 
 
 def get_release_info(ref: str, event_name: str, run_number: str) -> dict:
