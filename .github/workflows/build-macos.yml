@@ -60,7 +60,15 @@ jobs:
         shell: bash -el {0}
         run: |
           conda config --set channel_priority flexible
-          conda env create -f environment.yml
+          if [[ "${{ matrix.arch }}" == "x86_64" ]]; then
+            # Intel Mac: PyQt6 not on conda-forge, remove it and install via pip
+            grep -v "pyqt" environment.yml > environment-intel.yml
+            conda env create -f environment-intel.yml
+            conda activate mhkit-gui-qt
+            pip install "PyQt6>=6.4.0"
+          else
+            conda env create -f environment.yml
+          fi
 
       - name: Build application
         shell: bash -el {0}
