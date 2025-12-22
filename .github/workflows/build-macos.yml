@@ -2,59 +2,114 @@ name: Build macOS
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  build-macos:
+  # Prepare version info
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ steps.info.outputs.app_name }}
+      version: ${{ steps.info.outputs.version }}
+      tag_name: ${{ steps.info.outputs.tag_name }}
+      release_name: ${{ steps.info.outputs.release_name }}
+      is_release: ${{ steps.info.outputs.is_release }}
+      is_prerelease: ${{ steps.info.outputs.is_prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get release info
+        id: info
+        run: |
+          python scripts/release_info.py \
+            --ref "${{ github.ref }}" \
+            --event "${{ github.event_name }}" \
+            --run "${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+  # Build macOS - Apple Silicon and Intel
+  build:
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15]  # Apple Silicon runners
+        include:
+          - os: macos-latest
+            arch: arm64
+            arch_label: AppleSilicon
+          - os: macos-15-intel
+            arch: x86_64
+            arch_label: Intel
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        auto-update-conda: true
-        python-version: "3.11"
-        channels: conda-forge
-        channel-priority: strict
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: "3.11"
+          channels: conda-forge
+          channel-priority: strict
 
-    - name: Create conda environment
-      shell: bash -el {0}
-      run: |
-        conda config --set channel_priority flexible
-        conda env create -f environment.yml
+      - name: Create conda environment
+        shell: bash -el {0}
+        run: |
+          conda config --set channel_priority flexible
+          conda env create -f environment.yml
 
-    - name: Build application
-      shell: bash -el {0}
-      run: |
-        conda activate mhkit-gui-qt
-        rm -rf build dist
-        pyinstaller mhkit_dolfyn_gui.spec
+      - name: Build application
+        shell: bash -el {0}
+        run: |
+          conda activate mhkit-gui-qt
+          rm -rf build dist
+          pyinstaller mhkit_dolfyn_gui.spec
 
-    - name: Test bundled application
-      shell: bash -el {0}
-      run: |
-        conda activate mhkit-gui-qt
-        pytest tests/gui/test_conversion.py::TestBundledApp -v
+      - name: Test bundled application
+        shell: bash -el {0}
+        run: |
+          conda activate mhkit-gui-qt
+          pytest tests/gui/test_conversion.py::TestBundledApp -v
 
-    - name: Create archive
-      shell: bash -el {0}
-      run: |
-        cd dist
-        zip -r "MHKiT-DOLFyN-macOS-${{ matrix.os }}.zip" "MHKiT-DOLFyN.app"
+      - name: Create archive
+        shell: bash -el {0}
+        env:
+          APP_NAME: ${{ needs.prepare.outputs.app_name }}
+        run: |
+          cd dist
+          zip -r "${APP_NAME}-macOS-${{ matrix.arch_label }}.zip" "${APP_NAME}.app"
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: MHKiT-DOLFyN-${{ matrix.os }}
-        path: dist/MHKiT-DOLFyN-macOS-${{ matrix.os }}.zip
-        retention-days: 30
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-${{ matrix.arch_label }}
+          path: dist/${{ needs.prepare.outputs.app_name }}-macOS-${{ matrix.arch_label }}.zip
+          retention-days: 30
+
+  # Add to GitHub Release
+  release:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create or update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          name: ${{ needs.prepare.outputs.release_name }}
+          prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
+          files: |
+            artifacts/macOS-AppleSilicon/${{ needs.prepare.outputs.app_name }}-macOS-AppleSilicon.zip
+            artifacts/macOS-Intel/${{ needs.prepare.outputs.app_name }}-macOS-Intel.zip
