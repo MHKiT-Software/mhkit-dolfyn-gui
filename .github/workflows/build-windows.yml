@@ -2,54 +2,120 @@ name: Build Windows
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  build-windows:
+  # Prepare version info
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ steps.info.outputs.app_name }}
+      version: ${{ steps.info.outputs.version }}
+      tag_name: ${{ steps.info.outputs.tag_name }}
+      release_name: ${{ steps.info.outputs.release_name }}
+      is_release: ${{ steps.info.outputs.is_release }}
+      is_prerelease: ${{ steps.info.outputs.is_prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get release info
+        id: info
+        run: |
+          python scripts/release_info.py \
+            --ref "${{ github.ref }}" \
+            --event "${{ github.event_name }}" \
+            --run "${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+  # Build Windows
+  build:
+    needs: prepare
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        auto-update-conda: true
-        python-version: "3.11"
-        channels: conda-forge
-        channel-priority: strict
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: "3.11"
+          channels: conda-forge
+          channel-priority: strict
 
-    - name: Create conda environment
-      shell: bash -el {0}
-      run: |
-        conda config --set channel_priority flexible
-        conda env create -f environment.yml
+      - name: Create conda environment
+        shell: bash -el {0}
+        run: |
+          conda config --set channel_priority flexible
+          conda env create -f environment.yml
 
-    - name: Build application
-      shell: bash -el {0}
-      run: |
-        conda activate mhkit-gui-qt
-        rm -rf build dist
-        pyinstaller mhkit_dolfyn_gui.spec
+      - name: Build application
+        shell: bash -el {0}
+        env:
+          # Single-file mode for releases
+          PYINSTALLER_ONEFILE: ${{ (needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true') && 'true' || 'false' }}
+        run: |
+          conda activate mhkit-gui-qt
+          rm -rf build dist
+          pyinstaller mhkit_dolfyn_gui.spec
 
-    - name: Test bundled application
-      shell: bash -el {0}
-      run: |
-        conda activate mhkit-gui-qt
-        pytest tests/gui/test_conversion.py::TestBundledApp -v
+      - name: Test bundled application
+        if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
+        shell: bash -el {0}
+        run: |
+          conda activate mhkit-gui-qt
+          pytest tests/gui/test_conversion.py::TestBundledApp -v
 
-    - name: Create archive
-      shell: bash -el {0}
-      run: |
-        cd dist
-        7z a "MHKiT-DOLFyN-Windows.zip" "MHKiT-DOLFyN"
+      - name: Create archive (CI builds)
+        if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
+        shell: bash -el {0}
+        run: |
+          cd dist
+          7z a "MHKiT-DOLFyN-Windows.zip" "MHKiT-DOLFyN"
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: MHKiT-DOLFyN-Windows
-        path: dist/MHKiT-DOLFyN-Windows.zip
-        retention-days: 30
+      - name: Rename executable (release builds)
+        if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
+        shell: bash -el {0}
+        run: |
+          mv "dist/MHKiT-DOLFyN.exe" "dist/MHKiT-DOLFyN-Windows.exe"
+
+      - name: Upload artifact (CI builds)
+        if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows
+          path: dist/MHKiT-DOLFyN-Windows.zip
+          retention-days: 30
+
+      - name: Upload artifact (release builds)
+        if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows
+          path: dist/MHKiT-DOLFyN-Windows.exe
+          retention-days: 30
+
+  # Add to GitHub Release
+  release:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create or update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          name: ${{ needs.prepare.outputs.release_name }}
+          prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
+          files: |
+            artifacts/Windows/MHKiT-DOLFyN-Windows.exe
