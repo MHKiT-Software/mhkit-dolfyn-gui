@@ -27,13 +27,14 @@ else:
     APP_ICON = None  # Linux uses .desktop files for icons
 
 # Collect pecos templates directory
-pecos_datas = collect_data_files('pecos')
+pecos_data_paths = collect_data_files('pecos')
 
-# Add logo for splash screen and status bar icons
-logo_datas = [
+# Static assets to bundle (icons, version info, etc.)
+static_asset_paths = [
     ('assets/MHKiT_logo.png', 'assets'),
     ('assets/linux', 'assets/linux'),  # Status bar icons
     ('assets/app_icon/linux', 'assets/app_icon/linux'),  # Window icons
+    ('pyproject.toml', '.'),  # Version info
 ]
 
 # Platform-specific library handling for macOS jpeg issue
@@ -123,7 +124,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=jpeg_binaries,
-    datas=pecos_datas + logo_datas,
+    datas=pecos_data_paths + static_asset_paths,
     hiddenimports=[
         'mhkit',
         'mhkit.dolfyn',
