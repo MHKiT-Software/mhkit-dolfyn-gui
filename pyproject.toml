@@ -1,0 +1,23 @@
+[project]
+name = "mhkit-dolfyn-gui"
+version = "1.0.1"
+description = "GUI for standardization of ADCP/ADV files to NetCDF using MHKiT-DOLFyN"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = [
+    "PyQt6>=6.4.0",
+    "mhkit>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pyinstaller>=6.0",
+]
+
+[project.scripts]
+mhkit-dolfyn-gui = "main:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
