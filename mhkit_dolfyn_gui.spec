@@ -11,6 +11,13 @@ APP_NAME = 'MHKiT-DOLFyN'  # Used for executable and folder names
 APP_BUNDLE_NAME = 'MHKiT-DOLFyN.app'  # macOS app bundle name
 BUNDLE_ID = 'gov.nrel.mhkit.dolfyn'
 
+# Single-file mode: Set PYINSTALLER_ONEFILE=true to build a single executable
+# This is used for prerelease builds on Windows and Linux
+# macOS always uses .app bundle regardless of this setting
+ONEFILE = os.environ.get('PYINSTALLER_ONEFILE', '').lower() == 'true'
+if ONEFILE:
+    print(f"Building in SINGLE-FILE mode (PYINSTALLER_ONEFILE={os.environ.get('PYINSTALLER_ONEFILE')})")
+
 # App icon (platform-specific) - Using proper square DOLFyN icons
 if sys.platform == 'darwin':
     APP_ICON = 'assets/app_icon/macos/AppIcon.icns' if Path('assets/app_icon/macos/AppIcon.icns').exists() else None
@@ -78,36 +85,65 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    [],
-    exclude_binaries=True,
-    name=APP_NAME,
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon=APP_ICON,  # Windows uses icon here
-)
+# Single-file mode for Windows/Linux prereleases
+# macOS always uses .app bundle (directory mode required)
+if ONEFILE and sys.platform != 'darwin':
+    # Single executable - all dependencies bundled inside
+    exe = EXE(
+        pyz,
+        a.scripts,
+        a.binaries,
+        a.datas,
+        [],
+        name=APP_NAME,
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=True,
+        upx_exclude=[],
+        runtime_tmpdir=None,
+        console=False,
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+        target_arch=None,
+        codesign_identity=None,
+        entitlements_file=None,
+        icon=APP_ICON,
+    )
+    # No COLLECT needed for single-file mode
+    coll = None
+else:
+    # Directory mode - separate folder with dependencies
+    exe = EXE(
+        pyz,
+        a.scripts,
+        [],
+        exclude_binaries=True,
+        name=APP_NAME,
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=True,
+        console=False,
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+        target_arch=None,
+        codesign_identity=None,
+        entitlements_file=None,
+        icon=APP_ICON,
+    )
 
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name=APP_NAME,
-)
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        strip=False,
+        upx=True,
+        upx_exclude=[],
+        name=APP_NAME,
+    )
 
-# macOS: Create .app bundle
+# macOS: Create .app bundle (requires directory mode)
 if sys.platform == 'darwin':
     app = BUNDLE(
         coll,
