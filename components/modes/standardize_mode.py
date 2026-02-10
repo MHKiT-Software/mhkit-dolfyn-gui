@@ -42,16 +42,21 @@ from ..widgets import CollapsibleSection
 from ..help_system import InfoButton
 
 
-# Supported file extensions
+# Supported file extensions (both cases for case-sensitive filesystems)
 SUPPORTED_EXTENSIONS = [
     ".VEC",
     ".vec",
+    ".WPR",
     ".wpr",
+    ".AD2CP",
     ".ad2cp",
     ".000",
     ".PD0",
+    ".pd0",
     ".ENX",
     ".enx",
+    ".ENR",
+    ".enr",
 ]
 
 
@@ -440,7 +445,7 @@ class StandardizeMode(QWidget):
 
         # Supported formats info
         formats_label = QLabel(
-            "Supported formats: .ad2cp, .VEC, .wpr, .PD0, .000, .ENX"
+            "Supported formats: .ad2cp, .VEC, .wpr, .PD0, .000, .ENX, .ENR"
         )
         formats_label.setStyleSheet("color: #666; font-size: 11px;")
         formats_label.setToolTip(
@@ -451,7 +456,8 @@ class StandardizeMode(QWidget):
             "&nbsp;&nbsp;- AWAC (.wpr)<br><br>"
             "<b>Teledyne RDI:</b><br>"
             "&nbsp;&nbsp;- Workhorse, Sentinel, etc. (.PD0, .000)<br>"
-            "&nbsp;&nbsp;- WinRiver exports (.ENX)<br><br>"
+            "&nbsp;&nbsp;- WinRiver processed ensembles (.ENX)<br>"
+            "&nbsp;&nbsp;- WinRiver raw ensembles (.ENR)<br><br>"
             "<i>See MHKiT DOLfYN documentation for full details.</i>"
         )
         layout.addWidget(formats_label)
@@ -764,7 +770,7 @@ class StandardizeMode(QWidget):
                 self,
                 "Select ADCP/ADV File",
                 "",
-                "ADCP/ADV Files (*.VEC *.vec *.wpr *.ad2cp *.000 *.PD0 *.ENX *.enx);;All Files (*.*)",
+                "ADCP/ADV Files (*.VEC *.vec *.WPR *.wpr *.AD2CP *.ad2cp *.000 *.PD0 *.pd0 *.ENX *.enx *.ENR *.enr);;All Files (*.*)",
             )
             if filename:
                 self.input_path.setText(filename)
