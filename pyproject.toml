@@ -4,7 +4,7 @@ version = "1.0.1"
 description = "GUI for standardization of ADCP/ADV files to NetCDF using MHKiT-DOLFyN"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = {text = "BSD-3-Clause"}
 dependencies = [
     "PyQt6>=6.4.0",
     "mhkit>=1.0.1",
