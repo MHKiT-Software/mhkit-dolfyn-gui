@@ -54,15 +54,11 @@ if conda_prefix and sys.platform == 'darwin':
 # Packages to exclude - these are either unused or have large unused components
 EXCLUDES = [
     'PySide6',
-    # sklearn is not used by dolfyn
-    'sklearn',
-    'scikit-learn',
     # Unused test frameworks and testing utilities
     'pytest',
     'pytest_cov',
     'coverage',
     'hypothesis',
-    'unittest',
     # Development tools not needed at runtime
     'pip',
     'setuptools',
