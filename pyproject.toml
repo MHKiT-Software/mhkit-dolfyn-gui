@@ -1,23 +1,114 @@
 [project]
 name = "mhkit-dolfyn-gui"
-version = "1.0.1"
-description = "GUI for standardization of ADCP/ADV files to NetCDF using MHKiT-DOLFyN"
+version = "0.1.0"
+description = "GUI to convert ADCP/ADV binary files to NetCDF using MHKiT-DOLFyN"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = {text = "BSD-3-Clause"}
 dependencies = [
-    "PyQt6>=6.4.0",
+    "PySide6>=6.6.0",
     "mhkit>=1.0.1",
+    "psutil>=5.9",
+    "PyYAML>=6.0",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "ruff>=0.14",
+    "pyright>=1.1",
+    "types-PyYAML>=6.0",
+    "types-psutil>=5.9",
+    "pytest>=8.0",
+    "pytest-qt>=4.2",
+    "pytest-cov>=4.1",
     "pyinstaller>=6.0",
+    "pyinstaller-hooks-contrib",
 ]
 
-[project.scripts]
-mhkit-dolfyn-gui = "main:main"
+[project.gui-scripts]
+mhkit-dolfyn-gui = "mhkit_dolfyn_gui.app:main"
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mhkit_dolfyn_gui = ["data/*.json", "config/*.yaml"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportDeprecated = "warning"
+reportDuplicateImport = "warning"
+reportUnnecessaryCast = "warning"
+reportUnnecessaryIsInstance = "warning"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "W",      # pycodestyle warnings
+    "I",      # isort: consistent import ordering
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "RUF",    # Ruff-specific rules
+    "A",      # flake8-builtins: prevent shadowing builtins
+    "PIE",    # misc lints: unnecessary pass, reimplemented builtins
+    "T20",    # print statements: enforce logging over print()
+    "LOG",    # logging API correctness
+    "G",      # logging format: enforce lazy formatting
+    "PERF",   # performance anti-patterns
+    "PLE",    # pylint errors: catches real bugs
+    "PLW",    # pylint warnings: unused loop vars, bad comparisons
+    "RSE",    # raise rules: correct exception re-raising
+    "RET",    # return rules: unreachable code, inconsistent returns
+    "FLY",    # f-string rules: prefer f-strings over concatenation
+    "ICN",    # import conventions: enforce np/pd/xr aliases
+    "ISC",    # implicit string concatenation: catches missing commas
+    "TID",    # tidy imports: ban deep relative imports
+    "PT",     # pytest style: consistent test patterns
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # function call in default argument (common in Qt)
+    "SIM102", # nested if (sometimes clearer)
+    "SIM108", # ternary operator (readability preference)
+    "RUF012", # mutable class attributes (Qt Signal descriptors)
+    "ISC001", # implicit string concat on single line (conflicts with formatter)
+    "RET504", # unnecessary assignment before return (readability preference)
+    "PLW0603",# global statement (rare but sometimes needed)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["B011", "T20", "PLW"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mhkit_dolfyn_gui"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "qt: tests requiring a QApplication instance",
+    "integration: tests requiring mhkit and test data files",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:mhkit.*",
+    "ignore::DeprecationWarning:dolfyn.*",
+]
+qt_api = "pyside6"
