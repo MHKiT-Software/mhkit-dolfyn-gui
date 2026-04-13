@@ -1,19 +1,15 @@
-name: mhkit-gui-qt
+name: mhkit-dolfyn-gui
 channels:
   - conda-forge
 dependencies:
   - python=3.11
-  - pyqt>=6.4.0
-  - mhkit=0.9.0
-  - pyinstaller
-  - pyinstaller-hooks-contrib
-  - matplotlib>=3.5.0
-  - numpy>=1.20.0
-  - pytest>=7.0.0
-  - pillow>=9.0.0  # For icon generation scripts
-  # Let conda solver find compatible versions - force latest packages
+  - mhkit>=1.0.1
+  - numpy>=2.0
   - libnetcdf
   - netcdf4
   - hdf5
-  # Use libjpeg-turbo for better compatibility (provides libjpeg.8)
-  - libjpeg-turbo
+  - pyyaml
+  - psutil
+  - pip
+  - pip:
+    - PySide6>=6.6.0
