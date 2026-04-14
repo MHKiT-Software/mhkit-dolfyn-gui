@@ -1,0 +1,134 @@
+{
+  "generated_from": "mhkit v1.0.1",
+  "note": "DOLFyN dispatches readers by magic-byte sniffing, not by file extension. This file is generated from DOLFyN source by scripts/generate_supported_instruments.py \u2014 do not edit by hand. Each instrument carries a 'provenance' field describing where in DOLFyN each value was extracted.",
+  "all_extensions": [
+    ".000",
+    ".ad2cp",
+    ".ens",
+    ".enx",
+    ".lta",
+    ".pd0",
+    ".sta",
+    ".vec",
+    ".wpr"
+  ],
+  "all_extensions_from_docstring": [
+    ".000",
+    ".ad2cp",
+    ".enx",
+    ".pd0",
+    ".vec",
+    ".wpr"
+  ],
+  "magic_bytes": {
+    "RDI": [
+      "0x7f79",
+      "0x7f7f"
+    ],
+    "signature": [
+      "0xa50a"
+    ],
+    "nortek": [
+      "0xa505"
+    ]
+  },
+  "instruments": [
+    {
+      "manufacturer": "Nortek",
+      "name": "Signature",
+      "type": "ADCP",
+      "extensions": [
+        ".ad2cp"
+      ],
+      "reader": "read_signature",
+      "magic_bytes": [
+        "0xa50a"
+      ],
+      "provenance": {
+        "inst_type": "mhkit.dolfyn.io.nortek2 (parsed)",
+        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)",
+        "extensions": "dolfyn.read.__doc__ (parsed)"
+      }
+    },
+    {
+      "manufacturer": "Nortek",
+      "name": "AWAC",
+      "type": "ADCP",
+      "model": "AWAC",
+      "serial_prefix": "WPR",
+      "extensions": [
+        ".wpr"
+      ],
+      "reader": "read_nortek",
+      "magic_bytes": [
+        "0xa505"
+      ],
+      "provenance": {
+        "name_and_type": "mhkit.dolfyn.io.nortek (parsed serial-prefix and init_*)",
+        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)"
+      }
+    },
+    {
+      "manufacturer": "Nortek",
+      "name": "Vector",
+      "type": "ADV",
+      "model": "Vector",
+      "serial_prefix": "VEC",
+      "extensions": [
+        ".vec"
+      ],
+      "reader": "read_nortek",
+      "magic_bytes": [
+        "0xa505"
+      ],
+      "provenance": {
+        "name_and_type": "mhkit.dolfyn.io.nortek (parsed serial-prefix and init_*)",
+        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)"
+      }
+    },
+    {
+      "manufacturer": "Teledyne RDI",
+      "name": "ADCP",
+      "type": "ADCP",
+      "extensions": [
+        ".000",
+        ".ens",
+        ".enx",
+        ".lta",
+        ".pd0",
+        ".sta"
+      ],
+      "reader": "read_rdi",
+      "magic_bytes": [
+        "0x7f79",
+        "0x7f7f"
+      ],
+      "models": [
+        "Broadband",
+        "ChannelMaster",
+        "DVS",
+        "Explorer",
+        "H-ADCP",
+        "Meridian",
+        "Navigator",
+        "Ocean Surveyor",
+        "Pathfinder",
+        "Pinnacle",
+        "Pioneer",
+        "Rio Grande",
+        "RiverPro",
+        "RiverRay",
+        "SentinelV",
+        "StreamPro",
+        "Tasman",
+        "WayFinder",
+        "Workhorse"
+      ],
+      "provenance": {
+        "models": "mhkit.dolfyn.io.rdi_defs.adcp_type (live)",
+        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)",
+        "extensions": "dolfyn.read.__doc__ (parsed) + RDI_POSTPROCESS_EXTENSIONS (VMDAS/WinRiver outputs, not enumerated upstream)"
+      }
+    }
+  ]
+}
