@@ -44,7 +44,6 @@ class Fonts:
 @dataclass(frozen=True)
 class AccentColors:
     primary: str = "#2196F3"
-    spinner: QColor = field(default_factory=lambda: QColor(33, 150, 243))
 
 
 @dataclass(frozen=True)
