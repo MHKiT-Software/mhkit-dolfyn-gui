@@ -1,5 +1,5 @@
 """MHKiT-DOLFyN: ADCP/ADV binary file to NetCDF converter."""
 
-from importlib.metadata import version
+from mhkit_dolfyn_gui._version import __version__
 
-__version__ = version("mhkit-dolfyn-gui")
+__all__ = ["__version__"]

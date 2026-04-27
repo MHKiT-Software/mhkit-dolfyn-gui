@@ -1,6 +1,6 @@
 [project]
 name = "mhkit-dolfyn-gui"
-version = "0.2.0"
+dynamic = ["version"]
 description = "GUI to convert ADCP/ADV binary files to NetCDF using MHKiT-DOLFyN"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -31,6 +31,9 @@ mhkit-dolfyn-gui = "mhkit_dolfyn_gui.app:main"
 [build-system]
 requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "mhkit_dolfyn_gui._version.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

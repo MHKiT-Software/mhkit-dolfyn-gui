@@ -5,7 +5,7 @@
 Build with: ``pyinstaller mhkit_dolfyn.spec --noconfirm``
 
 Notes:
-- App version is read from ``pyproject.toml`` so the bundle stays in sync.
+- App version is read from ``src/mhkit_dolfyn_gui/_version.py`` so the bundle stays in sync.
 - ``collect_data_files`` pulls every ``config/*.yaml`` and ``data/*.json`` from
   the installed package, which is required because the app loads them via
   ``importlib.resources`` (see ``constants.py`` and ``models/summary_template.py``).
@@ -21,17 +21,19 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
+sys.path.insert(0, "src")
+
 
 def _read_version() -> str:
-    """Read the project version from pyproject.toml.
+    """Read the project version from _version.py (single source of truth).
 
-    Falls back to ``0.0.0`` if the file is missing or unreadable so the build
-    never hard-fails on a packaging metadata issue.
+    Falls back to ``0.0.0`` if the import fails so the build never hard-fails
+    on a packaging metadata issue.
     """
     try:
-        with open("pyproject.toml", "rb") as f:
-            return tomllib.load(f)["project"]["version"]
-    except (OSError, KeyError, tomllib.TOMLDecodeError):
+        from mhkit_dolfyn_gui._version import __version__
+        return __version__
+    except Exception:
         return "0.0.0"
 
 
