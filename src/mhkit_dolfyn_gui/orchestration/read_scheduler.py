@@ -1,8 +1,7 @@
 """Bounded concurrent file-read queue with generation-based staleness.
 
-This QObject owns the read-worker lifecycle that was previously inlined
-in ``MainWindow``.  It communicates UI updates exclusively through Qt
-signals so it never imports from ``widgets/``.
+This QObject owns the read-worker lifecycle. It communicates UI updates
+exclusively through Qt signals so it never imports from ``widgets/``.
 """
 
 from __future__ import annotations
