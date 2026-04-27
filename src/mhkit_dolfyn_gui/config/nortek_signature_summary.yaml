@@ -1,0 +1,41 @@
+name: Nortek Signature
+mode: per_file
+columns:
+  left:
+    - path: computed.instrument
+      label: "Instrument"
+    - path: attr.serial_number
+      label: "Serial"
+    - path: attr.coord_sys
+      label: "Coord System"
+    - path: computed.sampling_freq
+      label: "Sampling Freq"
+    - path: computed.bins_beams
+      label: "Bins / Beams"
+    - path: attr.cell_size
+      label: "Cell Size"
+    - path: attr.blank_dist
+      label: "Blanking Dist"
+    - path: attr.orientation
+      label: "Orientation"
+    - path: attr.declination
+      label: "Declination"
+  right:
+    - path: coord.time.first
+      label: "Start"
+    - path: coord.time.last
+      label: "End"
+    - path: computed.duration
+      label: "Duration"
+    - path: computed.ensembles
+      label: "Ensembles"
+    - path: var.pressure.mean
+      label: "Pressure (mean)"
+    - path: var.temp.mean
+      label: "Temperature (mean)"
+    - path: var.heading.mean
+      label: "Heading (mean)"
+    - path: var.pitch.mean
+      label: "Pitch (mean)"
+    - path: var.battery.mean
+      label: "Battery (mean)"

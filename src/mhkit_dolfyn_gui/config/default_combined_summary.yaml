@@ -1,0 +1,21 @@
+name: Default Combined
+mode: combined
+columns:
+  left:
+    - path: combined.files_loaded
+      label: "Files Loaded"
+    - path: computed.instrument
+      label: "Instrument"
+    - path: attr.coord_sys
+      label: "Coord System"
+    - path: attr.fs
+      label: "Sampling Freq"
+  right:
+    - path: combined.earliest_start
+      label: "Earliest Start"
+    - path: combined.latest_end
+      label: "Latest End"
+    - path: combined.total_duration
+      label: "Total Duration"
+    - path: combined.total_ensembles
+      label: "Total Ensembles"
