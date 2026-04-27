@@ -55,8 +55,8 @@ class SummaryDisplay(QWidget):
             else:
                 form.addRow(f"{row.field.label}:", value_label)
 
-    def set_legacy_summary(self, summary: dict[str, str]) -> None:
-        """Render a flat dict into the left column only (used for error display)."""
+    def set_flat_dict(self, summary: dict[str, str]) -> None:
+        """Render a flat dict into the left column only (used for error/cached display)."""
         self.clear()
         for label_text, value_text in summary.items():
             value_label = QLabel(value_text)
