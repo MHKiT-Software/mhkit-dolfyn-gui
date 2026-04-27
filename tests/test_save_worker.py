@@ -1,0 +1,104 @@
+"""Tests for the streaming SaveWorker."""
+
+from __future__ import annotations
+
+import sys
+import types
+from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
+
+import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+from mhkit_dolfyn_gui.models.file_item import FileItem
+from mhkit_dolfyn_gui.workers.save_worker import (
+    SaveFailure,
+    SaveJob,
+    SaveProgress,
+    SaveWorker,
+)
+
+
+@pytest.fixture
+def fake_dolfyn(monkeypatch):
+    """Install a stub ``mhkit.dolfyn`` module so the worker never imports the real package."""
+    fake = types.ModuleType("mhkit.dolfyn")
+    fake.read = MagicMock()
+    fake.save = MagicMock()
+
+    parent = sys.modules.get("mhkit")
+    if parent is None:
+        parent = types.ModuleType("mhkit")
+        monkeypatch.setitem(sys.modules, "mhkit", parent)
+    monkeypatch.setattr(parent, "dolfyn", fake, raising=False)
+    monkeypatch.setitem(sys.modules, "mhkit.dolfyn", fake)
+    return fake
+
+
+def _job(tmp_path: Path, name: str, profile_index: int = 0) -> SaveJob:
+    return SaveJob(
+        file_item=FileItem(path=tmp_path / f"{name}.bin"),
+        source_path=tmp_path / f"{name}.bin",
+        profile_index=profile_index,
+        output_path=tmp_path / "out" / f"{name}.nc",
+        userdata=None,
+    )
+
+
+def test_save_worker_emits_per_job_progress(qtbot, tmp_path, fake_dolfyn):
+    fake_ds = object()
+    fake_dolfyn.read.return_value = fake_ds
+
+    jobs = [_job(tmp_path, "a"), _job(tmp_path, "b")]
+    worker = SaveWorker(jobs)
+
+    progress: list[int] = []
+    failures: list[SaveFailure] = []
+    worker.file_saved.connect(lambda p: progress.append(p.index))
+    worker.file_failed.connect(lambda f: failures.append(f))
+
+    with qtbot.waitSignal(worker.all_done, timeout=5000):
+        worker.start()
+
+    assert progress == [0, 1]
+    assert failures == []
+    assert fake_dolfyn.read.call_count == 2
+    assert fake_dolfyn.save.call_count == 2
+
+
+def test_save_worker_failure_emits_failure(qtbot, tmp_path, fake_dolfyn):
+    fake_dolfyn.read.side_effect = RuntimeError("nope")
+
+    jobs = [_job(tmp_path, "a")]
+    worker = SaveWorker(jobs)
+
+    failures: list[SaveFailure] = []
+    worker.file_failed.connect(lambda f: failures.append(f))
+
+    with qtbot.waitSignal(worker.all_done, timeout=5000):
+        worker.start()
+
+    assert len(failures) == 1
+    assert failures[0].index == 0
+    assert "nope" in failures[0].error
+
+
+def test_save_worker_handles_tuple_result_with_profile_index(qtbot, tmp_path, fake_dolfyn):
+    profiles = (object(), object(), object())
+    fake_dolfyn.read.return_value = profiles
+
+    jobs = [_job(tmp_path, "multi", profile_index=2)]
+    worker = SaveWorker(jobs)
+
+    saved: list[SaveProgress] = []
+    worker.file_saved.connect(lambda p: saved.append(p))
+
+    with qtbot.waitSignal(worker.all_done, timeout=5000):
+        worker.start()
+
+    assert len(saved) == 1
+    # The dataset passed to dolfyn.save must be the selected profile.
+    saved_ds = fake_dolfyn.save.call_args[0][0]
+    assert saved_ds is profiles[2]
