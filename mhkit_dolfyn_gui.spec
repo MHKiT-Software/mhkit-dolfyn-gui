@@ -32,7 +32,6 @@ pecos_data_paths = collect_data_files('pecos')
 # Static assets to bundle (icons, version info, etc.)
 static_asset_paths = [
     ('assets/MHKiT_logo.png', 'assets'),
-    ('assets/linux', 'assets/linux'),  # Status bar icons
     ('assets/app_icon/linux', 'assets/app_icon/linux'),  # Window icons
     ('pyproject.toml', '.'),  # Version info
 ]
