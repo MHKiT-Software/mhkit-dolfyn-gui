@@ -2,7 +2,16 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from typing import TYPE_CHECKING
+
+# Force Qt to use the offscreen (software) platform on Linux so the xcb
+# platform plugin — which requires a live display server and specific system
+# libraries — is never loaded.  Widgets are still fully functional; only
+# actual screen rendering is skipped, which no test requires.
+if sys.platform.startswith("linux"):
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import numpy as np
 import pytest
