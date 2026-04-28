@@ -34,6 +34,7 @@ static_asset_paths = [
     ('assets/MHKiT_logo.png', 'assets'),
     ('assets/app_icon/linux', 'assets/app_icon/linux'),  # Window icons
     ('pyproject.toml', '.'),  # Version info
+    ('src/mhkit_dolfyn_gui/data', 'mhkit_dolfyn_gui/data'),  # Instrument definitions etc.
 ]
 
 # Platform-specific library handling for macOS jpeg issue
