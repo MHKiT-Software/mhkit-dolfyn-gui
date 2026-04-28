@@ -14,8 +14,9 @@ export instrument data without writing any code.
 
 Browse your filesystem and add binary instrument files to the conversion queue. Supported formats
 include `.ad2cp`, `.vec`, `.pd0`, `.000`, `.ens`, `.enx`, `.lta`, `.sta`, and `.wpr` (Nortek,
-RDI, and other instruments supported by `mhkit.dolfyn`). Files load in parallel and appear in the
-queue with a **Ready** status as soon as they are read.
+Teledyne RDI, and other instruments supported by `mhkit.dolfyn`). Files load in parallel and appear in the
+queue with a **Ready** status as soon as they converted into an intermediate format (xarray Dataset)
+for analysis prior to export.
 
 ![File Import](docs/img/v0.2.0_file_import.png)
 
