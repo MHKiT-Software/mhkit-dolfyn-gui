@@ -18,6 +18,8 @@ from mhkit_dolfyn_gui.widgets.file_tree_browser import FileTreeBrowser
 from mhkit_dolfyn_gui.widgets.summary import SummaryCard
 from mhkit_dolfyn_gui.widgets.variable_detail import VariableDetail
 
+_ROOT = Path(Path.cwd().anchor)
+
 
 @pytest.mark.qt
 class TestWidgetSmoke:
@@ -32,7 +34,7 @@ class TestWidgetSmoke:
     def test_summary_card_set_data(self, qtbot, sample_adcp_dataset) -> None:
         w = SummaryCard()
         qtbot.addWidget(w)
-        item = FileItem(path=Path("/tmp/test.ad2cp"), dataset=sample_adcp_dataset)
+        item = FileItem(path=_ROOT / "tmp" / "test.ad2cp", dataset=sample_adcp_dataset)
         item.status = FileStatus.READY
         w.set_data(sample_adcp_dataset, item)
         # Both columns should have rows
@@ -48,7 +50,7 @@ class TestWidgetSmoke:
     def test_summary_card_edit_toggle(self, qtbot, sample_adcp_dataset) -> None:
         w = SummaryCard()
         qtbot.addWidget(w)
-        item = FileItem(path=Path("/tmp/test.ad2cp"), dataset=sample_adcp_dataset)
+        item = FileItem(path=_ROOT / "tmp" / "test.ad2cp", dataset=sample_adcp_dataset)
         w.set_data(sample_adcp_dataset, item)
         assert not w._editor.editing
         w._edit_btn.click()
@@ -107,7 +109,7 @@ class TestWidgetSmoke:
     def test_file_tree_browser_set_included(self, qtbot) -> None:
         w = FileTreeBrowser()
         qtbot.addWidget(w)
-        w.set_included_paths({Path("/tmp/test.vec")})
+        w.set_included_paths({_ROOT / "tmp" / "test.vec"})
 
     def test_file_sidebar(self, qtbot) -> None:
         w = FileSidebar()
@@ -120,7 +122,7 @@ class TestWidgetSmoke:
         w = FileSidebar()
         qtbot.addWidget(w)
         # Manually add a file item via the inner list panel
-        item = FileItem(path=Path("/tmp/test.vec"))
+        item = FileItem(path=_ROOT / "tmp" / "test.vec")
         w._list._file_items.append(item)
         w._list._append_list_item(0)
         w.update_item_status(0, FileStatus.READING)
@@ -171,14 +173,14 @@ class TestWidgetSmoke:
     def test_center_panel_show_file(self, qtbot, sample_adcp_dataset) -> None:
         w = CenterPanel()
         qtbot.addWidget(w)
-        item = FileItem(path=Path("/tmp/test.ad2cp"), dataset=sample_adcp_dataset)
+        item = FileItem(path=_ROOT / "tmp" / "test.ad2cp", dataset=sample_adcp_dataset)
         item.status = FileStatus.READY
         w.show_file(item)
 
     def test_combined_overview(self, qtbot, sample_adcp_dataset) -> None:
         w = CombinedOverview()
         qtbot.addWidget(w)
-        item = FileItem(path=Path("/tmp/test.vec"), dataset=sample_adcp_dataset)
+        item = FileItem(path=_ROOT / "tmp" / "test.vec", dataset=sample_adcp_dataset)
         item.status = FileStatus.READY
         w.update_overview([item])
 

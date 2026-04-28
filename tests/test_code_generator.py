@@ -15,12 +15,17 @@ from mhkit_dolfyn_gui.services.code_generator import (
 
 FIXED = datetime(2026, 4, 7, 12, 0, 0)
 
+# On Windows Path("/in/a.vec") is not absolute (no drive letter).
+# Using the filesystem anchor (e.g. "C:\\" on Windows, "/" on POSIX) ensures
+# paths are truly absolute on every platform.
+_ROOT = Path(Path.cwd().anchor)
+
 
 def _spec(**overrides: object) -> ExportJobSpec:
     """Build an ExportJobSpec with sensible defaults, overridable per-test."""
     defaults: dict[str, object] = {
-        "source": Path("/in/a.vec"),
-        "output": Path("/out/a.nc"),
+        "source": _ROOT / "in" / "a.vec",
+        "output": _ROOT / "out" / "a.nc",
         "profile_index": 0,
         "is_multi_profile": False,
         "userdata_mode": UserdataMode.NONE,
@@ -35,7 +40,7 @@ class TestExportJobSpec:
         with pytest.raises(ValueError, match="source path must be absolute"):
             ExportJobSpec(
                 source=Path("relative/in.vec"),
-                output=Path("/out/a.nc"),
+                output=_ROOT / "out" / "a.nc",
                 profile_index=0,
                 is_multi_profile=False,
                 userdata_mode=UserdataMode.NONE,
@@ -44,7 +49,7 @@ class TestExportJobSpec:
     def test_relative_output_rejected(self) -> None:
         with pytest.raises(ValueError, match="output path must be absolute"):
             ExportJobSpec(
-                source=Path("/in/a.vec"),
+                source=_ROOT / "in" / "a.vec",
                 output=Path("out/a.nc"),
                 profile_index=0,
                 is_multi_profile=False,
@@ -54,8 +59,8 @@ class TestExportJobSpec:
     def test_explicit_requires_path(self) -> None:
         with pytest.raises(ValueError, match="userdata_path is required"):
             ExportJobSpec(
-                source=Path("/in/a.vec"),
-                output=Path("/out/a.nc"),
+                source=_ROOT / "in" / "a.vec",
+                output=_ROOT / "out" / "a.nc",
                 profile_index=0,
                 is_multi_profile=False,
                 userdata_mode=UserdataMode.EXPLICIT,
@@ -65,8 +70,8 @@ class TestExportJobSpec:
     def test_explicit_rejects_relative_userdata(self) -> None:
         with pytest.raises(ValueError, match="userdata path must be absolute"):
             ExportJobSpec(
-                source=Path("/in/a.vec"),
-                output=Path("/out/a.nc"),
+                source=_ROOT / "in" / "a.vec",
+                output=_ROOT / "out" / "a.nc",
                 profile_index=0,
                 is_multi_profile=False,
                 userdata_mode=UserdataMode.EXPLICIT,
@@ -113,7 +118,7 @@ class TestGenerateExportScript:
             [
                 _spec(
                     userdata_mode=UserdataMode.EXPLICIT,
-                    userdata_path=Path("/etc/global.json"),
+                    userdata_path=_ROOT / "etc" / "global.json",
                 )
             ],
             now=FIXED,
@@ -139,8 +144,8 @@ class TestGenerateExportScript:
     def test_dict_mode_requires_userdata_dict(self) -> None:
         with pytest.raises(ValueError, match="userdata_dict is required"):
             ExportJobSpec(
-                source=Path("/in/a.vec"),
-                output=Path("/out/a.nc"),
+                source=_ROOT / "in" / "a.vec",
+                output=_ROOT / "out" / "a.nc",
                 profile_index=0,
                 is_multi_profile=False,
                 userdata_mode=UserdataMode.DICT,
@@ -150,21 +155,21 @@ class TestGenerateExportScript:
     def test_per_file_userdata_mixed_batch(self) -> None:
         """Each file's userdata setting is independent."""
         jobs = [
-            _spec(source=Path("/in/a.vec"), output=Path("/out/a.nc")),
+            _spec(source=_ROOT / "in" / "a.vec", output=_ROOT / "out" / "a.nc"),
             _spec(
-                source=Path("/in/b.vec"),
-                output=Path("/out/b.nc"),
+                source=_ROOT / "in" / "b.vec",
+                output=_ROOT / "out" / "b.nc",
                 userdata_mode=UserdataMode.SKIP,
             ),
             _spec(
-                source=Path("/in/c.vec"),
-                output=Path("/out/c.nc"),
+                source=_ROOT / "in" / "c.vec",
+                output=_ROOT / "out" / "c.nc",
                 userdata_mode=UserdataMode.EXPLICIT,
-                userdata_path=Path("/etc/global.json"),
+                userdata_path=_ROOT / "etc" / "global.json",
             ),
             _spec(
-                source=Path("/in/d.vec"),
-                output=Path("/out/d.nc"),
+                source=_ROOT / "in" / "d.vec",
+                output=_ROOT / "out" / "d.nc",
                 userdata_mode=UserdataMode.DICT,
                 userdata_dict={"sensor": "adcp"},
             ),
@@ -208,9 +213,9 @@ class TestGenerateExportScript:
 
     def test_multiple_files_all_appear_in_input_files(self) -> None:
         jobs = [
-            _spec(source=Path("/in/a.vec"), output=Path("/out/a.nc")),
-            _spec(source=Path("/in/b.vec"), output=Path("/out/b.nc")),
-            _spec(source=Path("/in/c.vec"), output=Path("/out/c.nc")),
+            _spec(source=_ROOT / "in" / "a.vec", output=_ROOT / "out" / "a.nc"),
+            _spec(source=_ROOT / "in" / "b.vec", output=_ROOT / "out" / "b.nc"),
+            _spec(source=_ROOT / "in" / "c.vec", output=_ROOT / "out" / "c.nc"),
         ]
         script = generate_export_script(jobs, now=FIXED)
         for name in ("a.vec", "b.vec", "c.vec"):
@@ -223,21 +228,21 @@ class TestGenerateExportScript:
             [
                 _spec(),
                 _spec(
-                    source=Path("/in/b.vec"),
-                    output=Path("/out/b.nc"),
+                    source=_ROOT / "in" / "b.vec",
+                    output=_ROOT / "out" / "b.nc",
                     is_multi_profile=True,
                     profile_index=1,
                     userdata_mode=UserdataMode.EXPLICIT,
-                    userdata_path=Path("/etc/g.json"),
+                    userdata_path=_ROOT / "etc" / "g.json",
                 ),
                 _spec(
-                    source=Path("/in/c.vec"),
-                    output=Path("/out/c.nc"),
+                    source=_ROOT / "in" / "c.vec",
+                    output=_ROOT / "out" / "c.nc",
                     userdata_mode=UserdataMode.SKIP,
                 ),
                 _spec(
-                    source=Path("/in/d.vec"),
-                    output=Path("/out/d.nc"),
+                    source=_ROOT / "in" / "d.vec",
+                    output=_ROOT / "out" / "d.nc",
                     userdata_mode=UserdataMode.DICT,
                     userdata_dict={"instrument": "adcp", "depth": 10},
                 ),
@@ -258,8 +263,8 @@ class TestGenerateExportScript:
         script = generate_export_script(
             [
                 _spec(
-                    source=Path("/in/with spaces/a.vec"),
-                    output=Path("/out/with spaces/a.nc"),
+                    source=_ROOT / "in" / "with spaces" / "a.vec",
+                    output=_ROOT / "out" / "with spaces" / "a.nc",
                 )
             ],
             now=FIXED,
@@ -269,7 +274,7 @@ class TestGenerateExportScript:
 
     def test_path_with_quote_is_escaped(self) -> None:
         """Paths containing single quotes must still compile."""
-        script = generate_export_script([_spec(source=Path("/in/o'brien/a.vec"))], now=FIXED)
+        script = generate_export_script([_spec(source=_ROOT / "in" / "o'brien" / "a.vec")], now=FIXED)
         compile(script, "<generated>", "exec")
 
     def test_loop_body_present(self) -> None:

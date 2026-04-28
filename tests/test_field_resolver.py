@@ -9,6 +9,8 @@ import xarray as xr
 
 from mhkit_dolfyn_gui.models.field_resolver import list_available_fields, resolve_field
 
+_ROOT = Path(Path.cwd().anchor)
+
 
 class _FakeFileItem:
     """Minimal stand-in for FileItem to avoid importing PySide6 in pure tests."""
@@ -151,15 +153,15 @@ class TestResolveField:
     # -- file --
 
     def test_file_name(self, sample_adcp_dataset) -> None:
-        fi = _FakeFileItem(Path("/data/test_file.ad2cp"))
+        fi = _FakeFileItem(_ROOT / "data" / "test_file.ad2cp")
         assert resolve_field(sample_adcp_dataset, "file.name", fi) == "test_file.ad2cp"
 
     def test_file_path(self, sample_adcp_dataset) -> None:
-        fi = _FakeFileItem(Path("/data/test_file.ad2cp"))
-        assert resolve_field(sample_adcp_dataset, "file.path", fi) == "/data/test_file.ad2cp"
+        fi = _FakeFileItem(_ROOT / "data" / "test_file.ad2cp")
+        assert resolve_field(sample_adcp_dataset, "file.path", fi) == (_ROOT / "data" / "test_file.ad2cp").as_posix()
 
     def test_file_extension(self, sample_adcp_dataset) -> None:
-        fi = _FakeFileItem(Path("/data/test_file.ad2cp"))
+        fi = _FakeFileItem(_ROOT / "data" / "test_file.ad2cp")
         assert resolve_field(sample_adcp_dataset, "file.extension", fi) == ".ad2cp"
 
     def test_file_no_item(self, sample_adcp_dataset) -> None:
