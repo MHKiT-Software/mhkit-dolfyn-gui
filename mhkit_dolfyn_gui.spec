@@ -53,7 +53,6 @@ if conda_prefix and sys.platform == 'darwin':
 
 # Packages to exclude - these are either unused or have large unused components
 EXCLUDES = [
-    'PySide6',
     # Unused test frameworks and testing utilities
     'pytest',
     'pytest_cov',
