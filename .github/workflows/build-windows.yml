@@ -68,6 +68,13 @@ jobs:
           rm -rf build dist
           pyinstaller mhkit_dolfyn_gui.spec
 
+      - name: Smoke test bundled app
+        shell: bash -el {0}
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          "dist/MHKiT-DOLFyN/MHKiT-DOLFyN.exe" --smoke-test
+
       - name: Create archive (CI builds)
         if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
         shell: bash -el {0}

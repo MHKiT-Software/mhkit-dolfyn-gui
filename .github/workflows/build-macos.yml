@@ -74,6 +74,13 @@ jobs:
           rm -rf build dist
           pyinstaller mhkit_dolfyn_gui.spec
 
+      - name: Smoke test bundled app
+        shell: bash -el {0}
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          "dist/MHKiT-DOLFyN.app/Contents/MacOS/MHKiT-DOLFyN" --smoke-test
+
       - name: Create archive
         shell: bash -el {0}
         env:
