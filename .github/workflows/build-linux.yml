@@ -8,19 +8,41 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Prepare version info
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ steps.info.outputs.app_name }}
+      tag_name: ${{ steps.info.outputs.tag_name }}
+      release_name: ${{ steps.info.outputs.release_name }}
+      is_release: ${{ steps.info.outputs.is_release }}
+      is_prerelease: ${{ steps.info.outputs.is_prerelease }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get release info
+        id: info
+        run: |
+          python3 scripts/release_info.py \
+            --ref "${{ github.ref }}" \
+            --event "${{ github.event_name }}" \
+            --run "${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+  # Build Linux
   build-linux:
+    needs: prepare
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
-        auto-update-conda: true
         python-version: "3.11"
         channels: conda-forge
         channel-priority: strict
+        activate-environment: mhkit-dolfyn-gui
 
     - name: Install system dependencies
       run: |
@@ -43,31 +65,52 @@ jobs:
     - name: Create conda environment
       shell: bash -el {0}
       run: |
-        conda config --set channel_priority flexible
         conda env create -f environment.yml
+
+    - name: Install dev dependencies
+      shell: bash -el {0}
+      run: |
+        pip install -e ".[dev]"
+
+    - name: Run tests
+      shell: bash -el {0}
+      run: |
+        xvfb-run -a pytest -k "not TestBundledApp" -v
 
     - name: Build application
       shell: bash -el {0}
+      env:
+        PYINSTALLER_ONEFILE: ${{ (needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true') && 'true' || 'false' }}
       run: |
-        conda activate mhkit-gui-qt
         rm -rf build dist
         pyinstaller mhkit_dolfyn_gui.spec
 
-    - name: Test bundled application
-      shell: bash -el {0}
-      run: |
-        conda activate mhkit-gui-qt
-        xvfb-run -a pytest tests/gui/test_conversion.py::TestBundledApp -v
-
-    - name: Create archive
+    - name: Create archive (CI builds)
+      if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
       shell: bash -el {0}
       run: |
         cd dist
         tar -czf "MHKiT-DOLFyN-Linux.tar.gz" "MHKiT-DOLFyN"
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+    - name: Rename executable (release builds)
+      if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
+      shell: bash -el {0}
+      run: |
+        mv "dist/MHKiT-DOLFyN" "dist/MHKiT-DOLFyN-Linux"
+
+    - name: Upload artifact (CI builds only)
+      if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
+      uses: actions/upload-artifact@v7
       with:
         name: MHKiT-DOLFyN-Linux
         path: dist/MHKiT-DOLFyN-Linux.tar.gz
-        retention-days: 30
+        retention-days: 3
+
+    - name: Upload to GitHub Release
+      if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ needs.prepare.outputs.tag_name }}
+        name: ${{ needs.prepare.outputs.release_name }}
+        prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
+        files: dist/MHKiT-DOLFyN-Linux
