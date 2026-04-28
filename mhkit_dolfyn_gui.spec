@@ -116,7 +116,7 @@ EXCLUDES = [
 ]
 
 a = Analysis(
-    ['main.py'],
+    ['run.py'],
     pathex=[],
     binaries=jpeg_binaries,
     datas=pecos_data_paths + static_asset_paths,
