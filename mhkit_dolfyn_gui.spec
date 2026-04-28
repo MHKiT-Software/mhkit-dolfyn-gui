@@ -32,7 +32,6 @@ pecos_data_paths = collect_data_files('pecos')
 # Static assets to bundle (icons, version info, etc.)
 static_asset_paths = [
     ('assets/MHKiT_logo.png', 'assets'),
-    ('assets/linux', 'assets/linux'),  # Status bar icons
     ('assets/app_icon/linux', 'assets/app_icon/linux'),  # Window icons
     ('pyproject.toml', '.'),  # Version info
 ]
@@ -53,7 +52,6 @@ if conda_prefix and sys.platform == 'darwin':
 
 # Packages to exclude - these are either unused or have large unused components
 EXCLUDES = [
-    'PySide6',
     # Unused test frameworks and testing utilities
     'pytest',
     'pytest_cov',
@@ -117,7 +115,7 @@ EXCLUDES = [
 ]
 
 a = Analysis(
-    ['main.py'],
+    ['run.py'],
     pathex=[],
     binaries=jpeg_binaries,
     datas=pecos_data_paths + static_asset_paths,
