@@ -57,6 +57,11 @@ def _smoke_test() -> None:
     window.init_stage_ui()
     window.init_stage_restore()
 
+    # Trigger closeEvent so background threads (e.g. PreloadWorker) are
+    # joined before the process exits — avoids "QThread destroyed while
+    # still running" abort on Linux.
+    window.close()
+
     log.info("Smoke test passed: %s v%s on %s", APP_NAME, APP_VERSION, sys.platform)
     sys.exit(0)
 
