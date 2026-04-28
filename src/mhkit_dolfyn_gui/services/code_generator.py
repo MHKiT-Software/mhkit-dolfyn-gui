@@ -142,14 +142,14 @@ def generate_export_script(
     # --- INPUT_FILES --------------------------------------------------
     lines.append("INPUT_FILES = [")
     for j in jobs:
-        lines.append(f"    Path({str(j.source)!r}),")
+        lines.append(f"    Path({j.source.as_posix()!r}),")
     lines.append("]")
     lines.append("")
 
     # --- OUTPUT_DIR ---------------------------------------------------
     # All jobs share the same output directory (first job's parent, or cwd
     # fallback for empty batches).
-    output_dir = str(jobs[0].output.parent) if jobs else "."
+    output_dir = jobs[0].output.parent.as_posix() if jobs else "."
     lines.append(f"OUTPUT_DIR = Path({output_dir!r})")
     lines.append("")
 
@@ -159,16 +159,16 @@ def generate_export_script(
     # When no file has an override the USERDATA variable is skipped entirely
     # and the loop uses a bare dolfyn.read() call — keeps common-case scripts
     # as simple as possible.
-    userdata_entries: list[tuple[str, str]] = []  # (source_str, value_repr)
+    userdata_entries: list[tuple[str, str]] = []  # (source_posix, value_repr)
     for j in jobs:
         if j.userdata_mode is UserdataMode.SKIP:
-            userdata_entries.append((str(j.source), "False"))
+            userdata_entries.append((j.source.as_posix(), "False"))
         elif j.userdata_mode is UserdataMode.EXPLICIT:
             assert j.userdata_path is not None
-            userdata_entries.append((str(j.source), f"Path({str(j.userdata_path)!r})"))
+            userdata_entries.append((j.source.as_posix(), f"Path({j.userdata_path.as_posix()!r})"))
         elif j.userdata_mode is UserdataMode.DICT:
             assert j.userdata_dict is not None
-            userdata_entries.append((str(j.source), repr(j.userdata_dict)))
+            userdata_entries.append((j.source.as_posix(), repr(j.userdata_dict)))
 
     has_userdata = bool(userdata_entries)
 
