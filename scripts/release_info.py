@@ -8,7 +8,6 @@ Outputs GitHub Actions format to stdout (append to $GITHUB_OUTPUT).
 """
 
 import argparse
-import tomllib
 from pathlib import Path
 
 # Global application name - used across all workflows
@@ -16,11 +15,11 @@ APP_NAME = "MHKiT-DOLFyN"
 
 
 def get_version() -> str:
-    """Get version from pyproject.toml."""
-    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-    with open(pyproject_path, "rb") as f:
-        data = tomllib.load(f)
-    return data["project"]["version"]
+    """Get version from src package _version.py (pyproject.toml uses dynamic versioning)."""
+    version_file = Path(__file__).parent.parent / "src" / "mhkit_dolfyn_gui" / "_version.py"
+    namespace: dict = {}
+    exec(version_file.read_text(encoding="utf-8"), namespace)  # noqa: S102
+    return namespace["__version__"]
 
 
 def get_release_info(ref: str, event_name: str, run_number: str) -> dict:
