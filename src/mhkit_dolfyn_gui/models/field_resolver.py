@@ -274,7 +274,7 @@ def _resolve_file(
     if prop == "name":
         return file_item.path.name
     if prop == "path":
-        return str(file_item.path)
+        return file_item.path.as_posix()
     if prop == "extension":
         return file_item.extension
     return NA
