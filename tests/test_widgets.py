@@ -81,18 +81,22 @@ class TestWidgetSmoke:
 
     # -- New dashboard widgets --
 
-    def test_breadcrumb_bar(self, qtbot) -> None:
+    def test_breadcrumb_bar(self, qtbot, tmp_path) -> None:
         w = BreadcrumbBar()
         qtbot.addWidget(w)
-        w.set_path("/Users/test/data")
-        assert w.current_path() == "/Users/test/data"
+        path_str = str(tmp_path)
+        w.set_path(path_str)
+        assert w.current_path() == path_str
 
     def test_breadcrumb_bar_segments(self, qtbot) -> None:
         w = BreadcrumbBar()
         qtbot.addWidget(w)
-        segments = w._parse_path("/Users/test")
+        import os
+
+        test_path = os.path.join(os.sep, "Users", "test")
+        segments = w._parse_path(test_path)
         assert len(segments) == 3
-        assert segments[0][0] == "/"
+        assert segments[0][0] in ("/", "\\")  # root separator (platform-dependent)
         assert segments[-1][0] == "test"
 
     def test_file_tree_browser(self, qtbot) -> None:
