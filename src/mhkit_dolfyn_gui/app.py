@@ -54,12 +54,10 @@ def _smoke_test() -> None:
     app.setPalette(theme.build_palette())
 
     window = MainWindow()
-    window.init_stage_ui()
+    window.init_stage_ui(with_preload=False)
     window.init_stage_restore()
 
-    # Trigger closeEvent so background threads (e.g. PreloadWorker) are
-    # joined before the process exits — avoids "QThread destroyed while
-    # still running" abort on Linux.
+    # Trigger closeEvent to flush settings and uninstall the event log.
     window.close()
 
     log.info("Smoke test passed: %s v%s on %s", APP_NAME, APP_VERSION, sys.platform)
