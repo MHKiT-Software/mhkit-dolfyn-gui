@@ -61,7 +61,13 @@ def _smoke_test() -> None:
     window.close()
 
     log.info("Smoke test passed: %s v%s on %s", APP_NAME, APP_VERSION, sys.platform)
-    sys.exit(0)
+
+    # Schedule quit before entering the event loop so Qt's internal threads
+    # (font engine, accessibility, offscreen platform, etc.) receive a proper
+    # shutdown signal.  Without app.exec() those threads are never joined and
+    # Py_FinalizeEx blocks indefinitely on Windows (or aborts on macOS).
+    QTimer.singleShot(0, app.quit)
+    sys.exit(app.exec())
 
 
 def main() -> None:
