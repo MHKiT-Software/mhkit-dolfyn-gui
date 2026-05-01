@@ -158,7 +158,7 @@ if ONEFILE and sys.platform != 'darwin':
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
-        upx=True,
+        upx=False,  # UPX disabled: can trigger Windows Defender and break DLL loading
         upx_exclude=[],
         runtime_tmpdir=None,
         console=False,
@@ -182,7 +182,7 @@ else:
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
-        upx=True,
+        upx=False,  # UPX disabled: compressing python*.dll breaks Windows DLL loader
         console=False,
         disable_windowed_traceback=False,
         argv_emulation=False,
@@ -196,8 +196,8 @@ else:
         exe,
         a.binaries,
         a.datas,
-        strip=True,  # Strip debug symbols to reduce binary size
-        upx=True,
+        strip=False,  # strip is a no-op on Windows and can corrupt binaries
+        upx=False,    # UPX disabled: compressing python*.dll breaks Windows DLL loader
         upx_exclude=[],
         name=APP_NAME,
     )
