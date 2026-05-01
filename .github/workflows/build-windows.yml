@@ -70,6 +70,7 @@ jobs:
 
       - name: Smoke test bundled app
         shell: bash -el {0}
+        timeout-minutes: 2
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
