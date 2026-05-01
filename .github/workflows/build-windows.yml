@@ -62,8 +62,7 @@ jobs:
       - name: Build application
         shell: bash -el {0}
         env:
-          # Single-file mode for releases
-          PYINSTALLER_ONEFILE: ${{ (needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true') && 'true' || 'false' }}
+          PYINSTALLER_ONEFILE: "true"
         run: |
           rm -rf build dist
           pyinstaller mhkit_dolfyn_gui.spec
