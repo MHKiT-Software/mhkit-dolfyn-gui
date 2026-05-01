@@ -2,7 +2,6 @@
 
 import os
 import sys
-import shutil
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_data_files
 
@@ -135,11 +134,6 @@ a = Analysis(
         'netCDF4',
         'h5py',
         'matplotlib.backends.backend_qtagg',
-        'components',
-        'components.modes',
-        'components.modes.standardize_mode',
-        'components.help_system',
-        'components.batch_processor',
     ],
     hookspath=[],
     hooksconfig={},
