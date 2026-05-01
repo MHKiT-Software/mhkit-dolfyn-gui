@@ -69,23 +69,25 @@ jobs:
 
       # Launch-and-kill smoke test: start the app, wait for it to stabilise,
       # check it is still alive (didn't crash on startup), then kill it.
+      # Uses PowerShell Start-Process -PassThru for reliable Windows process tracking.
+      # kill -0 / tasklist in Git Bash are not reliable for checking Windows GUI processes.
       - name: Smoke test bundled app
-        shell: bash -el {0}
-        timeout-minutes: 2
+        shell: pwsh
+        timeout-minutes: 3
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          "dist/MHKiT-DOLFyN/MHKiT-DOLFyN.exe" &
-          APP_PID=$!
-          sleep 20
-          if kill -0 "$APP_PID" 2>/dev/null; then
-            taskkill //F //PID "$APP_PID" || kill "$APP_PID"
-            echo "Smoke test passed: app was still running after 20s"
-          else
-            wait "$APP_PID"; EXIT_CODE=$?
-            echo "Smoke test FAILED: app exited early with code $EXIT_CODE"
+          $proc = Start-Process -FilePath "dist\MHKiT-DOLFyN.exe" -PassThru
+          # ONEFILE builds unpack to a temp folder before Python starts.
+          # Allow 60s: ~20-30s to unpack, ~15-20s for Qt/mhkit imports to initialise.
+          Start-Sleep -Seconds 60
+          if ($proc.HasExited) {
+            Write-Error "Smoke test FAILED: app exited early with code $($proc.ExitCode)"
             exit 1
-          fi
+          } else {
+            $proc.Kill()
+            Write-Output "Smoke test passed: app was still running after 20s"
+          }
 
       # Legacy headless smoke test (kept for reference, currently disabled)
       # - name: Smoke test bundled app (headless)
@@ -94,13 +96,6 @@ jobs:
       #     QT_QPA_PLATFORM: offscreen
       #   run: |
       #     "dist/MHKiT-DOLFyN/MHKiT-DOLFyN.exe" --smoke-test
-
-      - name: Create archive (CI builds)
-        if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
-        shell: bash -el {0}
-        run: |
-          cd dist
-          7z a "MHKiT-DOLFyN-Windows.zip" "MHKiT-DOLFyN"
 
       - name: Rename executable (release builds)
         if: needs.prepare.outputs.is_release == 'true' || needs.prepare.outputs.is_prerelease == 'true'
@@ -112,8 +107,8 @@ jobs:
         if: needs.prepare.outputs.is_release != 'true' && needs.prepare.outputs.is_prerelease != 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: Windows
-          path: dist/MHKiT-DOLFyN-Windows.zip
+          name: MHKiT-DOLFyN-Windows
+          path: dist/MHKiT-DOLFyN.exe
           retention-days: 3
 
       - name: Upload to GitHub Release
