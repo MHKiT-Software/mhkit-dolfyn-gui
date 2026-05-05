@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
@@ -93,8 +94,18 @@ class MainWindow(QMainWindow):
     # Staged initialization (called by app.py through splash)
     # ------------------------------------------------------------------
 
-    def init_stage_ui(self) -> None:
-        """Build the dashboard layout."""
+    def init_stage_ui(self, *, with_preload: bool = True) -> None:
+        """Build the dashboard layout.
+
+        Parameters
+        ----------
+        with_preload:
+            When *False*, skip starting the background ``PreloadWorker`` that
+            imports ``mhkit.dolfyn``.  Pass ``False`` in headless / smoke-test
+            contexts where the import is not needed and the thread lifetime
+            would outlast the process, causing an abort (macOS) or hang
+            (Windows).
+        """
         self.setWindowTitle(MAIN_WINDOW_TITLE)
         self.setMinimumSize(900, 600)
         self.resize(1200, 750)
@@ -166,8 +177,11 @@ class MainWindow(QMainWindow):
         self._build_menu_bar()
 
         # Preload mhkit.dolfyn on a background thread
-        self._preload_worker = PreloadWorker()
-        self._preload_worker.start()
+        if with_preload:
+            self._preload_worker = PreloadWorker()
+            self._preload_worker.start()
+        else:
+            log.debug("Preload worker skipped (headless/smoke-test mode)")
 
         log.info("Application ready")
 
@@ -490,9 +504,15 @@ class MainWindow(QMainWindow):
             preload_timeout_ms = self._settings.worker_shutdown_timeout_ms
             if not self._preload_worker.wait(preload_timeout_ms):
                 log.warning(
-                    "Preload worker did not finish within %d ms; abandoning",
+                    "Preload worker did not finish within %d ms; terminating",
                     preload_timeout_ms,
                 )
+                # terminate() is safe here: we're shutting down and the worker
+                # only does Python imports.  Skip on Windows where
+                # TerminateThread() is too dangerous.
+                if sys.platform != "win32":
+                    self._preload_worker.terminate()
+                    self._preload_worker.wait(1000)
         self._read_scheduler.cleanup_workers()
         self._event_log.uninstall()
         super().closeEvent(event)

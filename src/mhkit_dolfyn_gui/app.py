@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -42,8 +44,45 @@ def _set_app_icon(app: QApplication) -> None:
         app.setWindowIcon(QIcon(str(icon_path)))
 
 
+def _smoke_test() -> None:
+    """Run init stages headlessly and exit 0 — used by CI to validate the bundled app."""
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+    app = QApplication(sys.argv)
+    app.setApplicationName(APP_NAME)
+    app.setStyle("Fusion")
+    app.setPalette(theme.build_palette())
+
+    window = MainWindow()
+    window.init_stage_ui(with_preload=False)
+    window.init_stage_restore()
+
+    # Trigger closeEvent to flush settings and uninstall the event log.
+    window.close()
+
+    log.info("Smoke test passed: %s v%s on %s", APP_NAME, APP_VERSION, sys.platform)
+
+    # Schedule quit before entering the event loop so Qt's internal threads
+    # (font engine, accessibility, offscreen platform, etc.) receive a proper
+    # shutdown signal.  Without app.exec() those threads are never joined and
+    # Py_FinalizeEx blocks indefinitely on Windows (or aborts on macOS).
+    QTimer.singleShot(0, app.quit)
+    sys.exit(app.exec())
+
+
 def main() -> None:
     """Launch the MHKiT-DOLFyN application."""
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        "--smoke-test",
+        action="store_true",
+        help="Run init stages headlessly and exit (used by CI).",
+    )
+    args, _ = parser.parse_known_args()
+
+    if args.smoke_test:
+        _smoke_test()
+
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
 

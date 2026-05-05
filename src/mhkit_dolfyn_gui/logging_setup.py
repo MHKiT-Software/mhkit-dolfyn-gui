@@ -141,12 +141,17 @@ class _StreamToLogger:
     Buffers partial lines so each emitted record is one complete line.
     A reentrance guard prevents infinite recursion if logging itself
     writes to the stream we're capturing.
+
+    ``original`` may be ``None`` — this happens on Windows PyInstaller
+    builds compiled without a console (``--noconsole``).  In that case
+    pass-through is silently skipped; classification still works so log
+    records are still routed to the EventLog.
     """
 
     def __init__(
         self,
         classifier: StderrClassifier,
-        original: TextIO,
+        original: TextIO | None,
     ) -> None:
         self._classifier = classifier
         self._original = original
@@ -154,8 +159,9 @@ class _StreamToLogger:
         self._in_write = False
 
     def write(self, text: str) -> int:
-        # Always pass through to the real terminal.
-        self._original.write(text)
+        # Pass through to the real terminal when one exists.
+        if self._original is not None:
+            self._original.write(text)
 
         if not text or self._in_write:
             return len(text) if text else 0
@@ -173,7 +179,8 @@ class _StreamToLogger:
         return len(text)
 
     def flush(self) -> None:
-        self._original.flush()
+        if self._original is not None:
+            self._original.flush()
         if self._buffer.strip() and not self._in_write:
             self._in_write = True
             try:
@@ -184,7 +191,9 @@ class _StreamToLogger:
                 self._in_write = False
 
     def fileno(self) -> int:
-        return self._original.fileno()
+        if self._original is not None:
+            return self._original.fileno()
+        raise OSError("fileno() not available: no underlying stream (frozen build)")
 
     def isatty(self) -> bool:
         return False
@@ -262,6 +271,10 @@ class LogRouter:
         warnings.showwarning = _showwarning
 
         # 4. Capture stdout/stderr for libraries that print() instead of log.
+        #    On Windows frozen builds (PyInstaller --noconsole) sys.stdout and
+        #    sys.stderr are None.  We still install the classifier wrappers so
+        #    that log records reach the EventLog; we just skip pass-through to
+        #    the missing underlying stream.
         stdout_logger = logging.getLogger(STDOUT_LOGGER_NAME)
         stderr_logger = logging.getLogger(STDERR_LOGGER_NAME)
         stdout_logger.setLevel(logging.DEBUG)
@@ -270,8 +283,8 @@ class LogRouter:
         stdout_classifier = StderrClassifier(stdout_logger, STDOUT_DEFAULT_LEVEL)
         stderr_classifier = StderrClassifier(stderr_logger, STDERR_DEFAULT_LEVEL)
 
-        self._original_stdout = sys.stdout
-        self._original_stderr = sys.stderr
+        self._original_stdout = sys.stdout  # may be None on frozen Windows build
+        self._original_stderr = sys.stderr  # may be None on frozen Windows build
         sys.stdout = _StreamToLogger(stdout_classifier, self._original_stdout)  # type: ignore[assignment]
         sys.stderr = _StreamToLogger(stderr_classifier, self._original_stderr)  # type: ignore[assignment]
 
