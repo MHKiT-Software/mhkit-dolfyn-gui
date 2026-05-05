@@ -74,6 +74,34 @@ jobs:
           rm -rf build dist
           pyinstaller mhkit_dolfyn_gui.spec
 
+      # Launch-and-kill smoke test: start the app, wait for it to stabilise,
+      # check it is still alive (didn't crash on startup), then kill it.
+      - name: Smoke test bundled app
+        shell: bash -el {0}
+        timeout-minutes: 2
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          "dist/MHKiT-DOLFyN.app/Contents/MacOS/MHKiT-DOLFyN" &
+          APP_PID=$!
+          sleep 20
+          if kill -0 "$APP_PID" 2>/dev/null; then
+            kill "$APP_PID"
+            echo "Smoke test passed: app was still running after 20s"
+          else
+            wait "$APP_PID"; EXIT_CODE=$?
+            echo "Smoke test FAILED: app exited early with code $EXIT_CODE"
+            exit 1
+          fi
+
+      # Legacy headless smoke test (kept for reference, currently disabled)
+      # - name: Smoke test bundled app (headless)
+      #   shell: bash -el {0}
+      #   env:
+      #     QT_QPA_PLATFORM: offscreen
+      #   run: |
+      #     "dist/MHKiT-DOLFyN.app/Contents/MacOS/MHKiT-DOLFyN" --smoke-test
+
       - name: Create archive
         shell: bash -el {0}
         env:

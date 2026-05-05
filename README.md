@@ -1,10 +1,6 @@
 # MHKiT-DOLFyN GUI
 
-A desktop GUI for converting ADCP and ADV binary instrument files to standardized NetCDF, `.nc` files. It wraps
-[`mhkit.dolfyn`](https://mhkit-software.github.io/MHKiT/mhkit-python/api.dolfyn.html) —
-the Doppler Oceanographic Library for Python included in
-[MHKiT-Python](https://github.com/MHKiT-Software/MHKiT-Python) — so you can read, inspect, and
-export instrument data without writing any code.
+A desktop GUI for reading, inspecting, and exporting ADCP and ADV binary instrument data to standardized NetCDF (`.nc`) files. Powered by [`mhkit.dolfyn`](https://mhkit-software.github.io/MHKiT/mhkit-python/api.dolfyn.html), the Doppler Oceanographic Library for Python included in [MHKiT-Python](https://github.com/MHKiT-Software/MHKiT-Python).
 
 ![Overview](docs/img/v0.2.0_overview.png)
 
@@ -12,11 +8,16 @@ export instrument data without writing any code.
 
 ### 1. Import files
 
-Browse your filesystem and add binary instrument files to the conversion queue. Supported formats
-include `.ad2cp`, `.vec`, `.pd0`, `.000`, `.ens`, `.enx`, `.lta`, `.sta`, and `.wpr` (Nortek,
-Teledyne RDI, and other instruments supported by `mhkit.dolfyn`). Files load in parallel and appear in the
-queue with a **Ready** status as soon as they converted into an intermediate format (xarray Dataset)
-for analysis prior to export.
+Browse your filesystem and add binary instrument files to the conversion queue. Files load in
+parallel and appear in the queue with a **Ready** status as soon as they are converted into an
+intermediate format (xarray Dataset) for analysis prior to export.
+
+| Manufacturer | Instrument                                                                   | Type | Extensions                                |
+| ------------ | ---------------------------------------------------------------------------- | ---- | ----------------------------------------- |
+| Nortek       | Signature                                                                    | ADCP | `.ad2cp`                                  |
+| Nortek       | Vector                                                                       | ADV  | `.vec`                                    |
+| Nortek       | AWAC                                                                         | ADCP | `.wpr`                                    |
+| Teledyne RDI | Workhorse, RiverPro, [and others](https://www.teledynemarine.com/brands/rdi) | ADCP | `.000` `.ens` `.enx` `.lta` `.pd0` `.sta` |
 
 ![File Import](docs/img/v0.2.0_file_import.png)
 
