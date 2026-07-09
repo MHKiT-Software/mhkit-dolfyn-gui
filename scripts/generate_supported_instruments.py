@@ -80,15 +80,13 @@ def extract_extensions_from_docstring() -> list[str]:
     raw = re.findall(r"\.([A-Za-z0-9]+)\b", doc)
     # Filter to plausible extensions (2-5 chars) and drop internal/non-ext words.
     bad = {"json", "etc", "userdata", "dataset"}
-    exts = sorted(
-        {f".{e.lower()}" for e in raw if 2 <= len(e) <= 5 and e.lower() not in bad}
-    )
+    exts = sorted({f".{e.lower()}" for e in raw if 2 <= len(e) <= 5 and e.lower() not in bad})
     if not exts:
         raise RuntimeError("Failed to extract extensions from dolfyn.read docstring")
     return exts
 
 
-def extract_nortek_classic_models() -> list[dict[str, str | list[str]]]:
+def extract_nortek_classic_models() -> list[dict[str, object]]:
     """Parse nortek.py for serial-prefix → instrument mappings.
 
     The classic Nortek reader checks the serial number prefix to decide
@@ -126,7 +124,7 @@ def extract_nortek_classic_models() -> list[dict[str, str | list[str]]]:
         }
 
     # Map config_type → init method by name match (case-insensitive)
-    instruments: list[dict[str, str | list[str]]] = []
+    instruments: list[dict[str, object]] = []
     for prefix, config_type in serial_matches:
         init_key = next(
             (k for k in init_info if k.lower().endswith(config_type.lower())),
