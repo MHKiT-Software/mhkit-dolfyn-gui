@@ -285,8 +285,8 @@ class LogRouter:
 
         self._original_stdout = sys.stdout  # may be None on frozen Windows build
         self._original_stderr = sys.stderr  # may be None on frozen Windows build
-        sys.stdout = _StreamToLogger(stdout_classifier, self._original_stdout)  # type: ignore[assignment]
-        sys.stderr = _StreamToLogger(stderr_classifier, self._original_stderr)  # type: ignore[assignment]
+        sys.stdout = _StreamToLogger(stdout_classifier, self._original_stdout)
+        sys.stderr = _StreamToLogger(stderr_classifier, self._original_stderr)
 
     def uninstall(self) -> None:
         if not self._installed:
