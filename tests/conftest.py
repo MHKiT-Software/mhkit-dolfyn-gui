@@ -18,6 +18,8 @@ import pytest
 import xarray as xr
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from mhkit_dolfyn_gui.main_window import MainWindow
 
 
@@ -46,6 +48,7 @@ def sample_adcp_dataset() -> xr.Dataset:
         coords={
             "time": times,
             "range": np.arange(n_range, dtype=float),
+            "dir": np.array([1, 2, 3], dtype=np.int32),
         },
         attrs={
             "inst_type": "ADCP",
@@ -80,7 +83,10 @@ def sample_adv_dataset() -> xr.Dataset:
             "corr": (["beam", "time"], np.random.randn(n_beam, n_time)),
             "pressure": (["time"], np.random.uniform(10, 11, n_time)),
         },
-        coords={"time": times},
+        coords={
+            "time": times,
+            "dir": np.array([1, 2, 3], dtype=np.int32),
+        },
         attrs={
             "inst_type": "ADV",
             "inst_make": "Nortek",
@@ -101,37 +107,59 @@ def fake_dolfyn_dataset(sample_adcp_dataset: xr.Dataset) -> xr.Dataset:
     return sample_adcp_dataset
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def isolated_qsettings(tmp_path, monkeypatch):
-    """Redirect QSettings to a per-test temp dir so persistence tests do
-    not pollute the developer's real preferences."""
+    """Redirect QSettings to a per-test temp dir so no test can read or write
+    the developer's real preferences.
+
+    ``autouse=True`` means every test is isolated automatically; tests may
+    still request ``isolated_qsettings`` by name (e.g. to reference the
+    returned temp dir) without conflict.
+
+    ``QSettings.setPath`` only affects the ``IniFormat`` backend. On macOS
+    (and Windows) the ``QSettings(org, app)`` constructor used by ``Settings``
+    defaults to ``NativeFormat`` (a plist / the registry), which ignores
+    ``setPath`` — so we must force the Ini backend for the settings module.
+    We monkeypatch the ``QSettings`` name imported into ``settings`` with a
+    factory that constructs an ``IniFormat``/``UserScope`` instance rooted at
+    ``tmp_path``; production code is untouched.
+    """
     from PySide6.QtCore import QSettings
 
-    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
     QSettings.setPath(
         QSettings.Format.IniFormat,
         QSettings.Scope.UserScope,
         str(tmp_path),
     )
+
+    def _isolated_factory(*args, **kwargs):
+        return QSettings(
+            QSettings.Format.IniFormat,
+            QSettings.Scope.UserScope,
+            *args,
+            **kwargs,
+        )
+
+    from mhkit_dolfyn_gui import settings as settings_mod
+
+    monkeypatch.setattr(settings_mod, "QSettings", _isolated_factory)
     return tmp_path
 
 
 @pytest.fixture
-def main_window(qtbot, isolated_qsettings) -> MainWindow:
+def main_window(qtbot, isolated_qsettings) -> Iterator[MainWindow]:
     """A fully-staged MainWindow with PreloadWorker stubbed out.
 
     The preload worker imports mhkit.dolfyn on a background thread. We stub
     its ``run`` method so tests do not pay the import cost or risk a slow
     teardown when ``mhkit`` is unavailable.
     """
-    from PySide6.QtCore import QThread
-
     from mhkit_dolfyn_gui.main_window import MainWindow
     from mhkit_dolfyn_gui.workers import preload_worker
 
     # No-op the preload thread before constructing the window.
     original_run = preload_worker.PreloadWorker.run
-    preload_worker.PreloadWorker.run = lambda self: None  # type: ignore[method-assign]
+    preload_worker.PreloadWorker.run = lambda self: None
 
     try:
         window = MainWindow()
@@ -144,6 +172,6 @@ def main_window(qtbot, isolated_qsettings) -> MainWindow:
         if window._preload_worker is not None and window._preload_worker.isRunning():
             window._preload_worker.wait(2000)
         for w in list(window._read_scheduler._read_workers):
-            if isinstance(w, QThread) and w.isRunning():
+            if w.isRunning():
                 w.wait(2000)
-        preload_worker.PreloadWorker.run = original_run  # type: ignore[method-assign]
+        preload_worker.PreloadWorker.run = original_run

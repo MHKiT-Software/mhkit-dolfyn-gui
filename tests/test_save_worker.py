@@ -25,8 +25,8 @@ from mhkit_dolfyn_gui.workers.save_worker import (
 def fake_dolfyn(monkeypatch):
     """Install a stub ``mhkit.dolfyn`` module so the worker never imports the real package."""
     fake = types.ModuleType("mhkit.dolfyn")
-    fake.read = MagicMock()
-    fake.save = MagicMock()
+    fake.read = MagicMock()  # type: ignore[attr-defined]
+    fake.save = MagicMock()  # type: ignore[attr-defined]
 
     parent = sys.modules.get("mhkit")
     if parent is None:
@@ -37,13 +37,14 @@ def fake_dolfyn(monkeypatch):
     return fake
 
 
-def _job(tmp_path: Path, name: str, profile_index: int = 0) -> SaveJob:
+def _job(tmp_path: Path, name: str, profile_index: int = 0, include_velds: bool = False) -> SaveJob:
     return SaveJob(
         file_item=FileItem(path=tmp_path / f"{name}.bin"),
         source_path=tmp_path / f"{name}.bin",
         profile_index=profile_index,
         output_path=tmp_path / "out" / f"{name}.nc",
         userdata=None,
+        include_velds=include_velds,
     )
 
 
@@ -102,3 +103,44 @@ def test_save_worker_handles_tuple_result_with_profile_index(qtbot, tmp_path, fa
     # The dataset passed to dolfyn.save must be the selected profile.
     saved_ds = fake_dolfyn.save.call_args[0][0]
     assert saved_ds is profiles[2]
+
+
+def test_save_worker_injects_velds_when_included(qtbot, tmp_path, fake_dolfyn, monkeypatch):
+    fake_ds = object()
+    injected_ds = object()
+    fake_dolfyn.read.return_value = fake_ds
+
+    inject_mock = MagicMock(return_value=injected_ds)
+    monkeypatch.setattr(
+        "mhkit_dolfyn_gui.services.export_pipeline.inject_derived_velocity", inject_mock
+    )
+
+    jobs = [_job(tmp_path, "a", include_velds=True)]
+    worker = SaveWorker(jobs)
+
+    with qtbot.waitSignal(worker.all_done, timeout=5000):
+        worker.start()
+
+    inject_mock.assert_called_once_with(fake_ds)
+    saved_ds = fake_dolfyn.save.call_args[0][0]
+    assert saved_ds is injected_ds
+
+
+def test_save_worker_skips_velds_injection_when_excluded(qtbot, tmp_path, fake_dolfyn, monkeypatch):
+    fake_ds = object()
+    fake_dolfyn.read.return_value = fake_ds
+
+    inject_mock = MagicMock()
+    monkeypatch.setattr(
+        "mhkit_dolfyn_gui.services.export_pipeline.inject_derived_velocity", inject_mock
+    )
+
+    jobs = [_job(tmp_path, "a", include_velds=False)]
+    worker = SaveWorker(jobs)
+
+    with qtbot.waitSignal(worker.all_done, timeout=5000):
+        worker.start()
+
+    inject_mock.assert_not_called()
+    saved_ds = fake_dolfyn.save.call_args[0][0]
+    assert saved_ds is fake_ds
