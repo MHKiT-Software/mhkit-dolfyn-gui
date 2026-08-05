@@ -46,6 +46,7 @@ _PREFERENCE_KEYS: tuple[str, ...] = (
     "me_data_level",
     "me_include_temporal",
     "me_timezone_offset_hours",
+    "include_velds",
 )
 
 
@@ -282,6 +283,17 @@ class Settings(QObject):
     @me_timezone_offset_hours.setter
     def me_timezone_offset_hours(self, value: int) -> None:
         self._qs.setValue("me_timezone_offset_hours", int(value))
+
+    @property
+    def include_velds(self) -> bool:
+        val = self._qs.value("include_velds", True)
+        if isinstance(val, bool):
+            return val
+        return str(val).lower() not in ("false", "0", "")
+
+    @include_velds.setter
+    def include_velds(self, value: bool) -> None:
+        self._qs.setValue("include_velds", value)
 
     # ------------------------------------------------------------------
     # Generic bytes storage (for splitter states etc.)

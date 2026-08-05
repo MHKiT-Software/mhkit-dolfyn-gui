@@ -161,6 +161,7 @@ class MainWindow(QMainWindow):
             settings=self._settings,
             file_items_provider=lambda: self._file_sidebar.file_items,
             output_paths_provider=self._export_sidebar.get_output_paths,
+            include_velds_provider=lambda: self._export_sidebar.include_velds,
             parent=self,
         )
 
@@ -207,6 +208,7 @@ class MainWindow(QMainWindow):
             self._export_sidebar.me_data_level = self._settings.me_data_level
         self._export_sidebar.me_include_temporal = self._settings.me_include_temporal
         self._export_sidebar.me_timezone_offset_hours = self._settings.me_timezone_offset_hours
+        self._export_sidebar.include_velds = self._settings.include_velds
 
         if self._settings.filename_pattern:
             self._export_sidebar.pattern_text = self._settings.filename_pattern
@@ -247,6 +249,7 @@ class MainWindow(QMainWindow):
         self._export_sidebar.output_dir_changed.connect(self._on_output_dir_changed)
         self._export_sidebar.pattern_changed.connect(self._on_pattern_changed)
         self._export_sidebar.me_fields_changed.connect(self._on_me_fields_changed)
+        self._export_sidebar.include_velds_changed.connect(self._on_include_velds_changed)
 
         # ReadScheduler → MainWindow (UI dispatch)
         self._read_scheduler.item_status_changed.connect(self._on_read_status_changed)
@@ -322,6 +325,10 @@ class MainWindow(QMainWindow):
     def _on_pattern_changed(self, value: str) -> None:
         """Persist the export sidebar's filename pattern as the default."""
         self._settings.filename_pattern = value
+
+    def _on_include_velds_changed(self, value: bool) -> None:
+        """Persist the export sidebar's derived-velocity checkbox as the default."""
+        self._settings.include_velds = value
 
     def _on_me_fields_changed(self) -> None:
         """Persist ME Data Pipeline naming fields from the export sidebar."""

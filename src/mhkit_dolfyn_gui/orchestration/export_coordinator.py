@@ -47,12 +47,14 @@ class ExportCoordinator(QObject):
         settings: Settings,
         file_items_provider: Callable[[], list[FileItem]],
         output_paths_provider: Callable[[], list[tuple[int, int, Path]]],
+        include_velds_provider: Callable[[], bool],
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._settings = settings
         self._file_items_provider = file_items_provider
         self._output_paths_provider = output_paths_provider
+        self._include_velds_provider = include_velds_provider
 
         self._save_worker: SaveWorker | None = None
         self._current_output_paths: list[tuple[int, int, Path]] = []
@@ -73,6 +75,7 @@ class ExportCoordinator(QObject):
         items = self._file_items_provider()
         global_ud = self._settings.global_userdata_path
         global_ud_path = Path(global_ud) if global_ud else None
+        include_velds = self._include_velds_provider()
 
         jobs: list[SaveJob] = []
         for item_idx, profile_idx, out_path in output_paths:
@@ -91,6 +94,7 @@ class ExportCoordinator(QObject):
                     profile_index=profile_idx,
                     output_path=out_path,
                     userdata=userdata,
+                    include_velds=include_velds,
                 )
             )
 
@@ -123,6 +127,7 @@ class ExportCoordinator(QObject):
         items = self._file_items_provider()
         global_ud = self._settings.global_userdata_path
         global_ud_path = Path(global_ud).resolve() if global_ud else None
+        include_velds = self._include_velds_provider()
 
         specs: list[ExportJobSpec] = []
         for item_idx, profile_idx, out_path in output_paths:
@@ -148,6 +153,7 @@ class ExportCoordinator(QObject):
                     is_multi_profile=is_multi,
                     userdata_mode=mode,
                     userdata_path=ud_path,
+                    include_velds=include_velds,
                 )
             )
 
