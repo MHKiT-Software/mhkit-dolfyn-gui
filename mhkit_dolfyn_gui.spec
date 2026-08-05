@@ -34,6 +34,9 @@ static_asset_paths = [
     ('assets/app_icon/linux', 'assets/app_icon/linux'),  # Window icons
     ('pyproject.toml', '.'),  # Version info
     ('src/mhkit_dolfyn_gui/data', 'mhkit_dolfyn_gui/data'),  # Instrument definitions etc.
+    # Source read at runtime and embedded verbatim into generated export scripts
+    # (importlib.resources needs the .py present as data in onefile builds).
+    ('src/mhkit_dolfyn_gui/services/export_pipeline.py', 'mhkit_dolfyn_gui/services'),
 ]
 
 # Platform-specific library handling for macOS jpeg issue
