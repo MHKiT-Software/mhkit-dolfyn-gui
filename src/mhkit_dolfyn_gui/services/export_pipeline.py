@@ -1,25 +1,38 @@
-"""velds computed velocity property extraction.
+"""Portable read -> process -> save pipeline shared by the GUI and generated scripts.
 
-Wraps the ``ds.velds`` xarray accessor (registered by mhkit.dolfyn) so the
-rest of the application can consume computed velocity properties without
-knowing the accessor's internals.
+This module is the **single source of truth** for the per-file export body:
+reading a raw instrument file, selecting a profile, deriving velocity fields via
+mhkit.dolfyn's ``velds`` accessor, and saving to NetCDF.
 
-Public API
-----------
-- ``VELDS_PROP_NAMES`` — ordered tuple of the always-available property names
-- ``get_velds_dataarrays``    — extract float32 DataArrays from a dataset
-- ``inject_velds_into_dataset`` — return a dataset copy with velds vars added
+- The GUI's :class:`~mhkit_dolfyn_gui.workers.save_worker.SaveWorker` imports and
+  calls these functions directly at runtime.
+- :mod:`~mhkit_dolfyn_gui.services.code_generator` embeds this module's *verbatim
+  source text* into the standalone script it generates, so the generated script
+  runs exactly the same code — no hand-maintained copy, no drift.
+
+Embed-safety rules (do not break these — they keep the source droppable into a
+generated script mid-file):
+
+- **No** ``from __future__ import annotations``. A future statement is only legal
+  at the very top of a module; embedded mid-script it is a ``SyntaxError``.
+  Annotations that reference ``xarray`` are therefore written as *strings* so they
+  are never evaluated at runtime.
+- **No top-level third-party imports.** ``mhkit.dolfyn`` and ``pathlib`` are
+  imported lazily inside :func:`process_one_file`. Only stdlib ``typing`` is
+  imported at module scope (harmless, and inert when embedded).
+- **No** ``mhkit_dolfyn_gui`` imports — the generated script must run without this
+  package installed.
 """
-
-from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import xarray as xr
 
 # Ordered names used for display and injection.
-VELDS_PROP_NAMES: tuple[str, ...] = (
+VELDS_PROP_NAMES = (
     "u",
     "v",
     "w",
@@ -29,9 +42,9 @@ VELDS_PROP_NAMES: tuple[str, ...] = (
     "U_imag",
 )
 
-# Internal extractor table — (name, callable(velds_accessor) -> DataArray).
+# Internal extractor table -- (name, callable(velds_accessor) -> DataArray).
 # All extractors must return float32. U is complex64 so it is always split.
-_EXTRACTORS: tuple[tuple[str, object], ...] = (
+_EXTRACTORS = (
     ("u", lambda v: v.u.astype("float32")),
     ("v", lambda v: v.v.astype("float32")),
     ("w", lambda v: v.w.astype("float32")),
@@ -42,7 +55,7 @@ _EXTRACTORS: tuple[tuple[str, object], ...] = (
 )
 
 # Frame-aware long_name for u/v/w, keyed by ds.attrs["coord_sys"].
-_UVW_LONG_NAMES: dict[str, dict[str, str]] = {
+_UVW_LONG_NAMES = {
     "earth": {
         "u": "Eastward Velocity",
         "v": "Northward Velocity",
@@ -66,13 +79,13 @@ _UVW_LONG_NAMES: dict[str, dict[str, str]] = {
 }
 
 # CF standard_name only applies to the earth (geographic) frame.
-_UVW_STANDARD_NAMES: dict[str, str] = {
+_UVW_STANDARD_NAMES = {
     "u": "eastward_sea_water_velocity",
     "v": "northward_sea_water_velocity",
     "w": "upward_sea_water_velocity",
 }
 
-_UVW_FALLBACK_INDEX: dict[str, int] = {"u": 1, "v": 2, "w": 3}
+_UVW_FALLBACK_INDEX = {"u": 1, "v": 2, "w": 3}
 
 _DERIVED_COMMENT = "Derived from 'vel' via mhkit.dolfyn; not present in the raw source file."
 
@@ -84,7 +97,7 @@ _U_COMPLEX_COMMENT = (
 )
 
 
-def _apply_velds_metadata(name: str, da: xr.DataArray, coord_sys: str) -> xr.DataArray:
+def _apply_velds_metadata(name: str, da: "xr.DataArray", coord_sys: str) -> "xr.DataArray":
     """Attach accurate, frame-aware attrs to a computed velds DataArray in place.
 
     Never raises — a metadata-setting bug must never break extraction.
@@ -111,7 +124,7 @@ def _apply_velds_metadata(name: str, da: xr.DataArray, coord_sys: str) -> xr.Dat
     return da
 
 
-def get_velds_dataarrays(ds: xr.Dataset) -> list[tuple[str, xr.DataArray]]:
+def derived_velocity_pairs(ds: "xr.Dataset") -> "list[tuple[str, xr.DataArray]]":
     """Return (name, DataArray) pairs for all successfully computed velds properties.
 
     Silently skips any property that raises (e.g. missing ``vel`` variable or
@@ -127,10 +140,10 @@ def get_velds_dataarrays(ds: xr.Dataset) -> list[tuple[str, xr.DataArray]]:
 
     coord_sys = ds.attrs.get("coord_sys", "")
 
-    results: list[tuple[str, xr.DataArray]] = []
+    results = []
     for name, fn in _EXTRACTORS:
         try:
-            da = fn(accessor)  # type: ignore[operator]
+            da = fn(accessor)
             da = _apply_velds_metadata(name, da, coord_sys)
             results.append((name, da))
         except Exception:
@@ -138,7 +151,7 @@ def get_velds_dataarrays(ds: xr.Dataset) -> list[tuple[str, xr.DataArray]]:
     return results
 
 
-def inject_velds_into_dataset(ds: xr.Dataset) -> xr.Dataset:
+def inject_derived_velocity(ds: "xr.Dataset") -> "xr.Dataset":
     """Return a copy of *ds* with velds computed properties added as data variables.
 
     - Raw variable wins on name collision: any name already present in
@@ -148,6 +161,41 @@ def inject_velds_into_dataset(ds: xr.Dataset) -> xr.Dataset:
     - If no properties can be computed, returns ``ds.assign({})`` (a shallow
       copy with no new variables).
     """
-    pairs = get_velds_dataarrays(ds)
+    pairs = derived_velocity_pairs(ds)
     to_assign = {name: da for name, da in pairs if name not in ds.data_vars}
     return ds.assign(to_assign)
+
+
+def process_one_file(
+    source_path: "Path | str",
+    output_path: "Path | str",
+    profile_index: int = 0,
+    userdata: "dict | None" = None,
+    include_velds: bool = True,
+) -> "Path":
+    """Read one raw file, optionally derive velocity fields, and save to NetCDF.
+
+    - ``profile_index`` selects which profile to keep when ``dolfyn.read``
+      returns a tuple for multi-profile instruments.
+    - ``userdata`` is passed straight to ``dolfyn.read`` when not None
+      (``dict`` of inline metadata, a path, or ``False`` to suppress loading).
+    - ``include_velds`` gates :func:`inject_derived_velocity`.
+
+    Returns the output path. Does not print or log — callers report progress.
+    Only one dataset is held at a time, so peak memory stays bounded.
+    """
+    from pathlib import Path
+
+    import mhkit.dolfyn as dolfyn
+
+    kwargs = {"userdata": userdata} if userdata is not None else {}
+    # dolfyn's stub types userdata as bool, but it also accepts a dict/path.
+    result = dolfyn.read(str(source_path), **kwargs)  # type: ignore[arg-type]
+    ds = result[profile_index] if isinstance(result, tuple) else result
+    if include_velds:
+        ds = inject_derived_velocity(ds)
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    dolfyn.save(ds, str(output_path))
+    return output_path
