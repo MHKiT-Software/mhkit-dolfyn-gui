@@ -96,7 +96,12 @@ jobs:
       env:
         QT_QPA_PLATFORM: offscreen
       run: |
-        dist/MHKiT-DOLFyN/MHKiT-DOLFyN &
+        if [ -f "dist/MHKiT-DOLFyN" ]; then
+          EXE="dist/MHKiT-DOLFyN"                 # onefile build (release/prerelease push)
+        else
+          EXE="dist/MHKiT-DOLFyN/MHKiT-DOLFyN"    # onedir build (PR/CI)
+        fi
+        "$EXE" &
         APP_PID=$!
         sleep 20
         if kill -0 "$APP_PID" 2>/dev/null; then

@@ -1,3 +1,9 @@
+# v0.3.1: Linux CI Smoke Test Fix
+
+### Bug Fixes
+
+- Fixed Linux CI failing with exit 126 (`Not a directory`) on every push-triggered release/prerelease build. The "Smoke test bundled app" step hardcoded the onedir executable path (`dist/MHKiT-DOLFyN/MHKiT-DOLFyN`), but push builds to `main`/`develop` produce a single-file executable (`dist/MHKiT-DOLFyN`) via `PYINSTALLER_ONEFILE`. The step now detects onefile vs. onedir output and launches the correct path.
+
 # v0.3.0: Derived Variable Support
 
 ## Additions
