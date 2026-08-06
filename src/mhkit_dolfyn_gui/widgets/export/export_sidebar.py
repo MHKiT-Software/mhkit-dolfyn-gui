@@ -44,6 +44,7 @@ class ExportSidebar(QWidget):
         self.output_dir_changed = self._config.output_dir_changed
         self.pattern_changed = self._config.pattern_changed
         self.me_fields_changed = self._config.me_fields_changed
+        self.include_velds_changed = self._config.include_velds_changed
 
     # ------------------------------------------------------------------
     # Configuration API forwarded to ExportConfigWidget
@@ -129,6 +130,14 @@ class ExportSidebar(QWidget):
     @me_timezone_offset_hours.setter
     def me_timezone_offset_hours(self, value: int) -> None:
         self._config.me_timezone_offset_hours = value
+
+    @property
+    def include_velds(self) -> bool:
+        return self._config.include_velds
+
+    @include_velds.setter
+    def include_velds(self, value: bool) -> None:
+        self._config.include_velds = value
 
     # ------------------------------------------------------------------
     # Progress lifecycle

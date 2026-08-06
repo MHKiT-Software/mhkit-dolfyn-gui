@@ -49,6 +49,7 @@ class SaveJob:
     profile_index: int
     output_path: Path
     userdata: dict[str, Any] | None
+    include_velds: bool = True
 
 
 @dataclass(frozen=True)
@@ -81,24 +82,25 @@ class SaveWorker(QThread):
         self._jobs = jobs
 
     def run(self) -> None:
-        import mhkit.dolfyn as dolfyn
+        from mhkit_dolfyn_gui.services.export_pipeline import process_one_file
 
         log.info("Save worker started: %d job(s)", len(self._jobs))
 
         for i, job in enumerate(self._jobs):
             t0 = time.perf_counter()
-            result = None
-            ds = None
             try:
-                if job.userdata is not None:
-                    result = dolfyn.read(str(job.source_path), userdata=job.userdata)  # pyright: ignore[reportArgumentType] — dolfyn stub types userdata as bool, actually accepts dict
-                else:
-                    result = dolfyn.read(str(job.source_path))
-                ds = result[job.profile_index] if isinstance(result, tuple) else result
-
-                job.output_path.parent.mkdir(parents=True, exist_ok=True)
+                # Shared per-file body — the exact code embedded into generated
+                # export scripts. The dataset lives inside process_one_file's
+                # frame and is released on return, so peak memory stays at
+                # ~one dataset regardless of corpus size.
                 log.debug("Writing %s", job.output_path.name)
-                dolfyn.save(ds, str(job.output_path))
+                process_one_file(
+                    job.source_path,
+                    job.output_path,
+                    profile_index=job.profile_index,
+                    userdata=job.userdata,
+                    include_velds=job.include_velds,
+                )
                 elapsed = time.perf_counter() - t0
                 log.info("Saved %s (%.1fs)", job.output_path.name, elapsed)
                 self.file_saved.emit(SaveProgress(index=i))
@@ -111,10 +113,6 @@ class SaveWorker(QThread):
                     exc,
                 )
                 self.file_failed.emit(SaveFailure(index=i, error=str(exc)))
-            finally:
-                # Release the dataset before the next iteration so peak
-                # memory stays at ~one dataset regardless of corpus size.
-                del result, ds
 
         self.all_done.emit()
         log.info("Save worker finished")
