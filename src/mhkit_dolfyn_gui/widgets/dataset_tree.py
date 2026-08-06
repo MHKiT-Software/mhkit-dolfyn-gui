@@ -1,7 +1,8 @@
 """Tree view of an xarray Dataset structure with human-readable labels.
 
-Branches: Dimensions, Coordinate Axes, Measurement Variables, Metadata.
-Emits variable_clicked when user clicks on a data variable or coordinate.
+Branches: Dimensions, Coordinate Axes, Measurement Variables, Derived Variables,
+Metadata. Emits variable_clicked when user clicks on a data variable, coordinate,
+or derived variable.
 """
 
 from __future__ import annotations
@@ -9,9 +10,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Signal
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QHeaderView, QTreeWidget, QTreeWidgetItem
 
 from mhkit_dolfyn_gui.data_to_display_string_formatters import human_dtype, human_shape, truncate
+from mhkit_dolfyn_gui.services.export_pipeline import derived_velocity_pairs
 
 if TYPE_CHECKING:
     import xarray as xr
@@ -21,7 +24,8 @@ if TYPE_CHECKING:
 class DatasetTree(QTreeWidget):
     """Shows the structure of an xarray Dataset as an expandable tree.
 
-    Top-level branches: Dimensions, Coordinate Axes, Measurement Variables, Metadata.
+    Top-level branches: Dimensions, Coordinate Axes, Measurement Variables,
+    Derived Variables, Metadata.
     """
 
     variable_clicked = Signal(str, object)  # (var_name, xr.DataArray)
@@ -34,6 +38,7 @@ class DatasetTree(QTreeWidget):
         self.header().setStretchLastSection(True)
 
         self._dataset: xr.Dataset | None = None
+        self._derived_data: dict[str, xr.DataArray] = {}
         self.itemClicked.connect(self._on_item_clicked)
 
     def set_dataset(self, ds: xr.Dataset) -> None:
@@ -63,6 +68,22 @@ class DatasetTree(QTreeWidget):
             for attr_name, attr_val in var.attrs.items():
                 QTreeWidgetItem(var_item, [str(attr_name), truncate(attr_val)])
 
+        # Derived Variables (computed via mhkit.dolfyn's velds accessor)
+        self._derived_data = dict(derived_velocity_pairs(ds))
+        derived_root = None
+        if self._derived_data:
+            derived_root = QTreeWidgetItem(self, ["Derived Variables", ""])
+            italic_font = QFont()
+            italic_font.setItalic(True)
+            for name, da in self._derived_data.items():
+                detail = self._format_var_detail(da)
+                derived_item = QTreeWidgetItem(derived_root, [self._display_name(name, da), detail])
+                derived_item.setFont(0, italic_font)
+                derived_item.setToolTip(
+                    0,
+                    "Derived from measured data — not present in the raw file (click for details)",
+                )
+
         # Metadata (global attributes)
         attrs_root = QTreeWidgetItem(self, ["Metadata", ""])
         for attr_name, attr_val in ds.attrs.items():
@@ -72,12 +93,15 @@ class DatasetTree(QTreeWidget):
         self.expandItem(dims_root)
         self.expandItem(coords_root)
         self.expandItem(vars_root)
+        if derived_root is not None:
+            self.expandItem(derived_root)
         # Metadata and variable attrs stay collapsed
 
     def clear_dataset(self) -> None:
         """Remove all items."""
         self.clear()
         self._dataset = None
+        self._derived_data = {}
 
     def _format_var_detail(self, var: xr.DataArray) -> str:
         """Build a human-readable detail string for a variable."""
@@ -110,7 +134,13 @@ class DatasetTree(QTreeWidget):
             return
 
         parent_text = parent.text(0)
-        if parent_text not in ("Coordinate Axes", "Measurement Variables"):
+        if parent_text not in ("Coordinate Axes", "Measurement Variables", "Derived Variables"):
+            return
+
+        if parent_text == "Derived Variables":
+            name = self._extract_paren_name(item.text(0))
+            if name is not None and name in self._derived_data:
+                self.variable_clicked.emit(name, self._derived_data[name])
             return
 
         # Extract the xarray name — it may be in parens if we used a display name
@@ -123,6 +153,13 @@ class DatasetTree(QTreeWidget):
             self.variable_clicked.emit(var_name, self._dataset.coords[var_name])
         elif parent_text == "Measurement Variables" and var_name in self._dataset.data_vars:
             self.variable_clicked.emit(var_name, self._dataset.data_vars[var_name])
+
+    @staticmethod
+    def _extract_paren_name(display_text: str) -> str | None:
+        """Recover the internal name from a "long_name (name)" display string."""
+        if "(" in display_text and display_text.endswith(")"):
+            return display_text.rsplit("(", 1)[1].rstrip(")")
+        return None
 
     def _extract_var_name(self, display_text: str, parent_text: str) -> str | None:
         """Extract the xarray variable name from the display text."""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import mhkit.dolfyn  # noqa: F401 — registers ds.velds accessor
 import pytest
 from PySide6.QtCore import Qt
 
@@ -64,8 +65,9 @@ class TestWidgetSmoke:
         w = DatasetTree()
         qtbot.addWidget(w)
         w.set_dataset(sample_adcp_dataset)
-        # Branches: Dimensions, Coordinate Axes, Measurement Variables, Metadata
-        assert w.topLevelItemCount() == 4
+        # Branches: Dimensions, Coordinate Axes, Measurement Variables,
+        # Derived Variables, Metadata
+        assert w.topLevelItemCount() == 5
         w.clear_dataset()
         assert w.topLevelItemCount() == 0
 
@@ -73,13 +75,36 @@ class TestWidgetSmoke:
         w = DatasetTree()
         qtbot.addWidget(w)
         w.set_dataset(sample_adcp_dataset)
-        branch_names = [w.topLevelItem(i).text(0) for i in range(w.topLevelItemCount())]
+        items = [w.topLevelItem(i) for i in range(w.topLevelItemCount())]
+        assert all(item is not None for item in items)
+        branch_names = [item.text(0) for item in items if item is not None]
         assert branch_names == [
             "Dimensions",
             "Coordinate Axes",
             "Measurement Variables",
+            "Derived Variables",
             "Metadata",
         ]
+
+    def test_dataset_tree_derived_variables_click(self, qtbot, sample_adcp_dataset) -> None:
+        w = DatasetTree()
+        qtbot.addWidget(w)
+        w.set_dataset(sample_adcp_dataset)
+        derived_root = None
+        for i in range(w.topLevelItemCount()):
+            item = w.topLevelItem(i)
+            if item is not None and item.text(0) == "Derived Variables":
+                derived_root = item
+                break
+        assert derived_root is not None
+        assert derived_root.childCount() == 7
+
+        received: list[tuple[str, object]] = []
+        w.variable_clicked.connect(lambda name, da: received.append((name, da)))
+        u_item = derived_root.child(0)
+        w._on_item_clicked(u_item, 0)
+        assert len(received) == 1
+        assert received[0][0] == "u"
 
     # -- New dashboard widgets --
 
@@ -145,7 +170,9 @@ class TestWidgetSmoke:
         # Toggling check state emits check_state_changed
         check_signals: list = []
         w.check_state_changed.connect(lambda i, c: check_signals.append((i, c)))
-        w._tree.topLevelItem(0).setCheckState(0, Qt.CheckState.Unchecked)
+        first_item = w._tree.topLevelItem(0)
+        assert first_item is not None
+        first_item.setCheckState(0, Qt.CheckState.Unchecked)
         assert check_signals == [(0, False)]
 
     def test_file_sidebar_open_add_dialog_exists(self, qtbot) -> None:

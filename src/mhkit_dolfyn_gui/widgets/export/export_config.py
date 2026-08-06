@@ -85,6 +85,7 @@ class ExportConfigWidget(QWidget):
     output_dir_changed = Signal(str)
     pattern_changed = Signal(str)
     me_fields_changed = Signal()
+    include_velds_changed = Signal(bool)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -162,6 +163,19 @@ class ExportConfigWidget(QWidget):
         self._error_label.setWordWrap(True)
         self._error_label.hide()
         layout.addWidget(self._error_label)
+
+        # Derived velocity fields (speed, direction, components) — orthogonal
+        # to ME naming mode, so this lives at the top level, not in the ME group.
+        self._include_velds = QCheckBox(
+            "Include derived velocity fields (speed, direction, components)"
+        )
+        self._include_velds.setChecked(True)
+        self._include_velds.setToolTip(
+            "Adds speed, direction, and velocity-component fields computed "
+            "from the raw velocity data (via mhkit.dolfyn)."
+        )
+        self._include_velds.toggled.connect(self.include_velds_changed.emit)
+        layout.addWidget(self._include_velds)
 
         # File checklist
         files_group = QGroupBox("Files to export")
@@ -920,6 +934,14 @@ class ExportConfigWidget(QWidget):
     @me_include_temporal.setter
     def me_include_temporal(self, value: bool) -> None:
         self._me_include_temporal.setChecked(value)
+
+    @property
+    def include_velds(self) -> bool:
+        return self._include_velds.isChecked()
+
+    @include_velds.setter
+    def include_velds(self, value: bool) -> None:
+        self._include_velds.setChecked(value)
 
     @property
     def me_timezone_offset_hours(self) -> int:

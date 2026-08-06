@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import xarray as xr
 
 from mhkit_dolfyn_gui.models.field_resolver import list_available_fields, resolve_field
+
+if TYPE_CHECKING:
+    from mhkit_dolfyn_gui.models.file_item import FileItem
 
 _ROOT = Path(Path.cwd().anchor)
 
@@ -154,15 +158,23 @@ class TestResolveField:
 
     def test_file_name(self, sample_adcp_dataset) -> None:
         fi = _FakeFileItem(_ROOT / "data" / "test_file.ad2cp")
-        assert resolve_field(sample_adcp_dataset, "file.name", fi) == "test_file.ad2cp"
+        assert (
+            resolve_field(sample_adcp_dataset, "file.name", cast("FileItem", fi))
+            == "test_file.ad2cp"
+        )
 
     def test_file_path(self, sample_adcp_dataset) -> None:
         fi = _FakeFileItem(_ROOT / "data" / "test_file.ad2cp")
-        assert resolve_field(sample_adcp_dataset, "file.path", fi) == (_ROOT / "data" / "test_file.ad2cp").as_posix()
+        assert (
+            resolve_field(sample_adcp_dataset, "file.path", cast("FileItem", fi))
+            == (_ROOT / "data" / "test_file.ad2cp").as_posix()
+        )
 
     def test_file_extension(self, sample_adcp_dataset) -> None:
         fi = _FakeFileItem(_ROOT / "data" / "test_file.ad2cp")
-        assert resolve_field(sample_adcp_dataset, "file.extension", fi) == ".ad2cp"
+        assert (
+            resolve_field(sample_adcp_dataset, "file.extension", cast("FileItem", fi)) == ".ad2cp"
+        )
 
     def test_file_no_item(self, sample_adcp_dataset) -> None:
         assert resolve_field(sample_adcp_dataset, "file.name") == "N/A"

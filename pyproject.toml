@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "BSD-3-Clause"}
 dependencies = [
-    "PySide6>=6.6.0",
-    "mhkit>=1.0.1",
+    "PySide6>=6.6.0,<6.11",
+    "mhkit>=1.1.0",
     "psutil>=5.9",
     "PyYAML>=6.0",
 ]
@@ -100,6 +100,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["B011", "T20", "PLW"]
+"scripts/*" = ["T20"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["mhkit_dolfyn_gui"]

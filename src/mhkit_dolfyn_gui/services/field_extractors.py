@@ -124,6 +124,7 @@ _ADCP_ONLY_FIELDS: list[tuple[str, Any]] = [
     ("Bins / Beams", _extract_bins_beams),
 ]
 
+
 def get_summary_fields(ds: xr.Dataset) -> list[tuple[str, Any]]:
     """Return the appropriate summary fields for the given dataset's instrument type."""
     inst_type = _detect_inst_type(ds)

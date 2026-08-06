@@ -61,3 +61,29 @@ class TestExportConfig:
         w._show_code_btn.setEnabled(True)
         with qtbot.waitSignal(w.code_requested, timeout=500):
             w._show_code_btn.click()
+
+    def test_include_velds_checked_by_default(self, qtbot) -> None:
+        w = ExportConfigWidget()
+        qtbot.addWidget(w)
+        assert w.include_velds is True
+
+    def test_include_velds_setter(self, qtbot) -> None:
+        w = ExportConfigWidget()
+        qtbot.addWidget(w)
+        w.include_velds = False
+        assert w.include_velds is False
+        assert w._include_velds.isChecked() is False
+
+    def test_include_velds_label_never_says_velds(self, qtbot) -> None:
+        """User-visible label must say 'derived', never the internal 'velds' term."""
+        w = ExportConfigWidget()
+        qtbot.addWidget(w)
+        assert "velds" not in w._include_velds.text().lower()
+        assert "derived" in w._include_velds.text().lower()
+
+    def test_include_velds_toggle_emits_signal(self, qtbot) -> None:
+        w = ExportConfigWidget()
+        qtbot.addWidget(w)
+        with qtbot.waitSignal(w.include_velds_changed, timeout=500) as blocker:
+            w.include_velds = False
+        assert blocker.args == [False]

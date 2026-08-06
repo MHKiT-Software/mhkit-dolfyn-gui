@@ -18,7 +18,7 @@ def get_version() -> str:
     """Get version from src package _version.py (pyproject.toml uses dynamic versioning)."""
     version_file = Path(__file__).parent.parent / "src" / "mhkit_dolfyn_gui" / "_version.py"
     namespace: dict = {}
-    exec(version_file.read_text(encoding="utf-8"), namespace)  # noqa: S102
+    exec(version_file.read_text(encoding="utf-8"), namespace)
     return namespace["__version__"]
 
 

@@ -30,7 +30,7 @@ def test_window_geometry_round_trip(qtbot, isolated_qsettings):
     s1._qs.sync()
 
     s2 = Settings()
-    assert bytes(s2.window_geometry) == b"some-opaque-geometry"
+    assert s2.window_geometry.data() == b"some-opaque-geometry"
 
 
 def test_preference_defaults_match_constants(isolated_qsettings):

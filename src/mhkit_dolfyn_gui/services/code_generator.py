@@ -1,9 +1,12 @@
 """Generate a runnable Python script that reproduces a GUI export run.
 
-Pure module — no Qt imports, no disk I/O — so it is trivially unit-testable
-and safe to call from any thread. The caller translates GUI state (file items,
-userdata settings, output paths) into a list of :class:`ExportJobSpec` and
-receives a string containing a self-contained Python script.
+Pure module (no Qt), safe to call from any thread. Takes a list of
+:class:`ExportJobSpec` built from GUI state and returns a self-contained script.
+
+The per-file body is not re-implemented here: the verbatim source of
+:mod:`mhkit_dolfyn_gui.services.export_pipeline` (the module the export worker
+runs) is embedded via :mod:`importlib.resources`, so the script runs the same
+code as the app — nothing to drift.
 
 The generated script has two or three top-level variables the user is
 expected to edit if they want to re-run or adapt the export:
@@ -39,13 +42,35 @@ Design choices
 
 from __future__ import annotations
 
+import ast
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from functools import lru_cache
+from importlib.resources import files
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+@lru_cache(maxsize=1)
+def _pipeline_source() -> str:
+    """Return the source of the portable export_pipeline module for embedding.
+
+    Read via importlib.resources so it resolves both from a normal install and
+    from a PyInstaller bundle (the ``.spec`` ships this file as bundle data).
+    The module's own docstring — internal maintainer notes about embed-safety —
+    is stripped so the generated script isn't cluttered with it.
+    """
+    src = files("mhkit_dolfyn_gui.services").joinpath("export_pipeline.py").read_text(
+        encoding="utf-8"
+    )
+    body = ast.parse(src).body
+    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant):
+        # Drop the leading module docstring (lines up to and including its last).
+        src = "\n".join(src.splitlines()[body[0].end_lineno :])
+    return src.strip("\n")
 
 
 class UserdataMode(StrEnum):
@@ -86,6 +111,7 @@ class ExportJobSpec:
     userdata_mode: UserdataMode
     userdata_path: Path | None = None
     userdata_dict: dict[str, object] | None = None
+    include_velds: bool = True
 
     def __post_init__(self) -> None:
         if not self.source.is_absolute():
@@ -125,6 +151,7 @@ def generate_export_script(
         disk or showing it to the user.
     """
     timestamp = (now or datetime.now()).isoformat(timespec="seconds")
+    include_velds = any(j.include_velds for j in jobs)
 
     # --- header -------------------------------------------------------
     lines: list[str] = [
@@ -135,14 +162,16 @@ def generate_export_script(
         "",
         "from pathlib import Path",
         "",
-        "import mhkit.dolfyn as dolfyn",
+        "",
+        "# Read -> process -> save body, embedded verbatim from the app's",
+        "# export_pipeline module so this script runs the exact same code.",
+        _pipeline_source(),
         "",
     ]
 
     # --- INPUT_FILES --------------------------------------------------
     lines.append("INPUT_FILES = [")
-    for j in jobs:
-        lines.append(f"    Path({j.source.as_posix()!r}),")
+    lines.extend(f"    Path({j.source.as_posix()!r})," for j in jobs)
     lines.append("]")
     lines.append("")
 
@@ -153,12 +182,15 @@ def generate_export_script(
     lines.append(f"OUTPUT_DIR = Path({output_dir!r})")
     lines.append("")
 
+    # --- INCLUDE_VELDS ------------------------------------------------
+    lines.append(f"INCLUDE_VELDS = {include_velds!r}")
+    lines.append("")
+
     # --- USERDATA dict ------------------------------------------------
     # Only files with non-default userdata settings are included.
     # AUTO and NONE files are omitted; absent files use dolfyn's default.
     # When no file has an override the USERDATA variable is skipped entirely
-    # and the loop uses a bare dolfyn.read() call — keeps common-case scripts
-    # as simple as possible.
+    # and the loop omits the userdata kwarg — keeps common-case scripts simple.
     userdata_entries: list[tuple[str, str]] = []  # (source_posix, value_repr)
     for j in jobs:
         if j.userdata_mode is UserdataMode.SKIP:
@@ -173,9 +205,7 @@ def generate_export_script(
     has_userdata = bool(userdata_entries)
 
     if has_userdata:
-        lines.append(
-            "# Per-file userdata overrides.  Files not listed use dolfyn's default"
-        )
+        lines.append("# Per-file userdata overrides.  Files not listed use dolfyn's default")
         lines.append("# (auto-load a sibling <stem>.userdata.json when it exists).")
         lines.append(
             "# Values: False = skip loading; Path(...) = explicit file; dict = inline metadata."
@@ -186,23 +216,34 @@ def generate_export_script(
         lines.append("}")
         lines.append("")
 
+    # --- PROFILE_INDEX dict -------------------------------------------
+    # Only multi-profile files whose selected profile is not 0 are listed;
+    # absent files default to profile 0.
+    profile_entries = [(j.source.as_posix(), j.profile_index) for j in jobs if j.profile_index]
+    has_profile_index = bool(profile_entries)
+
+    if has_profile_index:
+        lines.append("# Profile selected in the GUI for multi-profile instruments.")
+        lines.append("# Files not listed use profile 0.")
+        lines.append("PROFILE_INDEX = {")
+        for src, idx in profile_entries:
+            lines.append(f"    Path({src!r}): {idx},")
+        lines.append("}")
+        lines.append("")
+
     # --- loop ---------------------------------------------------------
     lines.append("for input_file in INPUT_FILES:")
+    lines.append('    output_file = OUTPUT_DIR / (input_file.stem + ".nc")')
+    lines.append("    process_one_file(")
+    lines.append("        input_file,")
+    lines.append("        output_file,")
+    if has_profile_index:
+        lines.append("        profile_index=PROFILE_INDEX.get(input_file, 0),")
     if has_userdata:
-        lines.append("    ud = USERDATA.get(input_file)")
-        lines.append('    kwargs = {"userdata": ud} if ud is not None else {}')
-        lines.append("    ds = dolfyn.read(str(input_file), **kwargs)")
-    else:
-        lines.append("    ds = dolfyn.read(str(input_file))")
-    lines += [
-        "    # If your instrument produces multiple profiles, ds will be a tuple.",
-        "    # Uncomment and adjust the line below to select a specific profile:",
-        "    # ds = ds[0]",
-        '    output_file = OUTPUT_DIR / (input_file.stem + ".nc")',
-        "    output_file.parent.mkdir(parents=True, exist_ok=True)",
-        "    dolfyn.save(ds, str(output_file))",
-        '    print(f"Saved {output_file}")',
-        "",
-    ]
+        lines.append("        userdata=USERDATA.get(input_file),")
+    lines.append("        include_velds=INCLUDE_VELDS,")
+    lines.append("    )")
+    lines.append('    print(f"Saved {output_file}")')
+    lines.append("")
 
     return "\n".join(lines)

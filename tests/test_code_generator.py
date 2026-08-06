@@ -99,19 +99,20 @@ class TestGenerateExportScript:
     def test_none_userdata_omitted_from_dict(self) -> None:
         script = generate_export_script([_spec()], now=FIXED)
         assert "USERDATA" not in script
-        assert "dolfyn.read(str(input_file))" in script
+        # No userdata kwarg in the loop call when there are no overrides.
+        assert "userdata=USERDATA.get(input_file)," not in script
 
     def test_auto_sidecar_omitted_from_dict(self) -> None:
         script = generate_export_script([_spec(userdata_mode=UserdataMode.AUTO)], now=FIXED)
         assert "USERDATA" not in script
-        assert "dolfyn.read(str(input_file))" in script
+        assert "userdata=USERDATA.get(input_file)," not in script
 
     def test_skip_emits_false_in_dict(self) -> None:
         script = generate_export_script([_spec(userdata_mode=UserdataMode.SKIP)], now=FIXED)
         assert "USERDATA = {" in script
         assert "False" in script
         assert "/in/a.vec" in script
-        assert "dolfyn.read(str(input_file), **kwargs)" in script
+        assert "userdata=USERDATA.get(input_file)," in script
 
     def test_explicit_emits_path_in_dict(self) -> None:
         script = generate_export_script(
@@ -126,7 +127,7 @@ class TestGenerateExportScript:
         assert "USERDATA = {" in script
         assert "/in/a.vec" in script
         assert "/etc/global.json" in script
-        assert "dolfyn.read(str(input_file), **kwargs)" in script
+        assert "userdata=USERDATA.get(input_file)," in script
 
     def test_dict_mode_emits_inline_dict(self) -> None:
         script = generate_export_script(
@@ -138,7 +139,7 @@ class TestGenerateExportScript:
         assert "'key'" in script
         assert "'value'" in script
         assert "42" in script
-        assert "dolfyn.read(str(input_file), **kwargs)" in script
+        assert "userdata=USERDATA.get(input_file)," in script
         compile(script, "<generated>", "exec")
 
     def test_dict_mode_requires_userdata_dict(self) -> None:
@@ -179,32 +180,37 @@ class TestGenerateExportScript:
         userdata_block = script.split("USERDATA = {")[1].split("}")[0]
         assert "/in/a.vec" not in userdata_block
         # b.vec → False
-        assert "/in/b.vec" in script and "False" in script
+        assert "/in/b.vec" in script
+        assert "False" in script
         # c.vec → explicit path
-        assert "/in/c.vec" in script and "/etc/global.json" in script
+        assert "/in/c.vec" in script
+        assert "/etc/global.json" in script
         # d.vec → inline dict
-        assert "/in/d.vec" in script and "'sensor'" in script
+        assert "/in/d.vec" in script
+        assert "'sensor'" in script
 
     def test_loop_uses_userdata_get(self) -> None:
         script = generate_export_script([_spec(userdata_mode=UserdataMode.SKIP)], now=FIXED)
-        assert "ud = USERDATA.get(input_file)" in script
-        assert 'kwargs = {"userdata": ud} if ud is not None else {}' in script
-        assert "dolfyn.read(str(input_file), **kwargs)" in script
+        assert "USERDATA.get(input_file)" in script
+        assert "process_one_file(" in script
 
-    def test_no_userdata_loop_is_bare_read(self) -> None:
+    def test_no_userdata_loop_omits_userdata_kwarg(self) -> None:
         script = generate_export_script([_spec()], now=FIXED)
         assert "USERDATA" not in script
-        assert "kwargs" not in script
-        assert "dolfyn.read(str(input_file))" in script
+        assert "userdata=" not in script.split("for input_file in INPUT_FILES:")[1]
 
-    def test_multi_profile_comment_always_present(self) -> None:
-        """Inline multi-profile comment appears regardless of is_multi_profile."""
-        script_single = generate_export_script([_spec()], now=FIXED)
+    def test_profile_index_dict_emitted_only_when_nonzero(self) -> None:
+        """PROFILE_INDEX is emitted for a selected non-zero profile, omitted otherwise."""
+        script_zero = generate_export_script([_spec(profile_index=0)], now=FIXED)
+        assert "PROFILE_INDEX" not in script_zero
+        assert "profile_index=" not in script_zero.split("for input_file in INPUT_FILES:")[1]
+
         script_multi = generate_export_script(
             [_spec(is_multi_profile=True, profile_index=2)], now=FIXED
         )
-        assert "# ds = ds[0]" in script_single
-        assert "# ds = ds[0]" in script_multi
+        assert "PROFILE_INDEX = {" in script_multi
+        assert "profile_index=PROFILE_INDEX.get(input_file, 0)," in script_multi
+        assert ": 2," in script_multi
 
     def test_output_uses_stem_and_output_dir(self) -> None:
         script = generate_export_script([_spec()], now=FIXED)
@@ -274,11 +280,54 @@ class TestGenerateExportScript:
 
     def test_path_with_quote_is_escaped(self) -> None:
         """Paths containing single quotes must still compile."""
-        script = generate_export_script([_spec(source=_ROOT / "in" / "o'brien" / "a.vec")], now=FIXED)
+        script = generate_export_script(
+            [_spec(source=_ROOT / "in" / "o'brien" / "a.vec")], now=FIXED
+        )
         compile(script, "<generated>", "exec")
 
     def test_loop_body_present(self) -> None:
         script = generate_export_script([_spec()], now=FIXED)
         assert "for input_file in INPUT_FILES:" in script
-        assert "dolfyn.save(ds, str(output_file))" in script
-        assert "output_file.parent.mkdir(parents=True, exist_ok=True)" in script
+        assert "process_one_file(" in script
+        assert 'output_file = OUTPUT_DIR / (input_file.stem + ".nc")' in script
+        assert 'print(f"Saved {output_file}")' in script
+
+
+class TestIncludeVelds:
+    def test_pipeline_always_embedded(self) -> None:
+        """The portable pipeline (both functions) is embedded verbatim."""
+        script = generate_export_script([_spec()], now=FIXED)
+        assert "def process_one_file(" in script
+        assert "def inject_derived_velocity(" in script
+
+    def test_default_sets_include_velds_true(self) -> None:
+        script = generate_export_script([_spec()], now=FIXED)
+        assert "INCLUDE_VELDS = True" in script
+        assert "include_velds=INCLUDE_VELDS," in script
+
+    def test_false_sets_include_velds_false(self) -> None:
+        script = generate_export_script([_spec(include_velds=False)], now=FIXED)
+        assert "INCLUDE_VELDS = False" in script
+
+    def test_any_job_true_enables_velds_for_whole_batch(self) -> None:
+        """include_velds is a single batch-level flag, not per-job."""
+        script = generate_export_script(
+            [_spec(include_velds=False), _spec(include_velds=True)], now=FIXED
+        )
+        assert "INCLUDE_VELDS = True" in script
+
+    def test_embedded_pipeline_has_no_mhkit_dolfyn_gui_import(self) -> None:
+        script = generate_export_script([_spec()], now=FIXED)
+        assert "import mhkit_dolfyn_gui" not in script
+        assert "from mhkit_dolfyn_gui" not in script
+
+    def test_internal_module_docstring_is_stripped(self) -> None:
+        """The embed-safety maintainer notes must not leak into user scripts."""
+        script = generate_export_script([_spec()], now=FIXED)
+        assert "Embed-safety rules" not in script
+
+    def test_generated_script_with_velds_is_valid_python(self) -> None:
+        import ast
+
+        script = generate_export_script([_spec()], now=FIXED)
+        ast.parse(script)  # raises SyntaxError on failure

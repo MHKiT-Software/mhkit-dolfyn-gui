@@ -1,13 +1,15 @@
 {
-  "generated_from": "mhkit v1.0.1",
+  "generated_from": "mhkit v1.1.0",
   "note": "DOLFyN dispatches readers by magic-byte sniffing, not by file extension. This file is generated from DOLFyN source by scripts/generate_supported_instruments.py \u2014 do not edit by hand. Each instrument carries a 'provenance' field describing where in DOLFyN each value was extracted.",
   "all_extensions": [
     ".000",
     ".ad2cp",
+    ".aqd",
     ".ens",
     ".enx",
     ".lta",
     ".pd0",
+    ".prf",
     ".sta",
     ".vec",
     ".wpr"
@@ -65,7 +67,8 @@
       ],
       "provenance": {
         "name_and_type": "mhkit.dolfyn.io.nortek (parsed serial-prefix and init_*)",
-        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)"
+        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)",
+        "extensions": "external: Nortek Support Center / IMOS toolbox docs (DOLFyN dispatches by magic bytes only and never enumerates per-instrument extensions in source; see EXTENSION_BY_PREFIX)"
       }
     },
     {
@@ -83,7 +86,46 @@
       ],
       "provenance": {
         "name_and_type": "mhkit.dolfyn.io.nortek (parsed serial-prefix and init_*)",
-        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)"
+        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)",
+        "extensions": "external: Nortek Support Center / IMOS toolbox docs (DOLFyN dispatches by magic bytes only and never enumerates per-instrument extensions in source; see EXTENSION_BY_PREFIX)"
+      }
+    },
+    {
+      "manufacturer": "Nortek",
+      "name": "Aquadopp",
+      "type": "ADCP",
+      "model": "Aquadopp",
+      "serial_prefix": "AQD",
+      "extensions": [
+        ".aqd"
+      ],
+      "reader": "read_nortek",
+      "magic_bytes": [
+        "0xa505"
+      ],
+      "provenance": {
+        "name_and_type": "mhkit.dolfyn.io.nortek (parsed serial-prefix and init_*)",
+        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)",
+        "extensions": "external: Nortek Support Center / IMOS toolbox docs (DOLFyN dispatches by magic bytes only and never enumerates per-instrument extensions in source; see EXTENSION_BY_PREFIX)"
+      }
+    },
+    {
+      "manufacturer": "Nortek",
+      "name": "Aquadopp Profiler",
+      "type": "ADCP",
+      "model": "Aquadopp",
+      "serial_prefix": "PRF",
+      "extensions": [
+        ".prf"
+      ],
+      "reader": "read_nortek",
+      "magic_bytes": [
+        "0xa505"
+      ],
+      "provenance": {
+        "name_and_type": "mhkit.dolfyn.io.nortek (parsed serial-prefix and init_*)",
+        "magic_bytes": "mhkit.dolfyn.io.api._get_filetype (parsed)",
+        "extensions": "external: Nortek Support Center / IMOS toolbox docs (DOLFyN dispatches by magic bytes only and never enumerates per-instrument extensions in source; see EXTENSION_BY_PREFIX)"
       }
     },
     {
