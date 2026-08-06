@@ -135,6 +135,8 @@ intermediate format (xarray Dataset) for analysis prior to export.
 | Nortek       | Signature                                                                    | ADCP | `.ad2cp`                                  |
 | Nortek       | Vector                                                                       | ADV  | `.vec`                                    |
 | Nortek       | AWAC                                                                         | ADCP | `.wpr`                                    |
+| Nortek       | Aquadopp                                                                     | ADCP | `.aqd`                                    |
+| Nortek       | Aquadopp Profiler                                                            | ADCP | `.prf`                                    |
 | Teledyne RDI | Workhorse, RiverPro, [and others](https://www.teledynemarine.com/brands/rdi) | ADCP | `.000` `.ens` `.enx` `.lta` `.pd0` `.sta` |
 
 ![File Import](docs/img/v0.2.0_file_import.png)
