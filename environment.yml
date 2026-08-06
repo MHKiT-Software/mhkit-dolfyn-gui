@@ -3,7 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - python=3.11
-  - mhkit>=1.0.1
   - numpy>=2.0
   - libnetcdf
   - netcdf4
@@ -14,3 +13,6 @@ dependencies:
   # build of openssl/icu/zlib with libnetcdf/hdf5/netcdf4
   - pyside6>=6.6.0,<6.11
   - pip
+  # Intentionally install mhkit from pip
+  - pip:
+      - mhkit>=1.1.0
