@@ -10,6 +10,7 @@ dependencies:
   - hdf5
   - pyyaml
   - psutil
+  # Ensure Qt DLLs share conda-forge's
+  # build of openssl/icu/zlib with libnetcdf/hdf5/netcdf4
+  - pyside6>=6.6.0,<6.11
   - pip
-  - pip:
-    - PySide6>=6.6.0,<6.11
