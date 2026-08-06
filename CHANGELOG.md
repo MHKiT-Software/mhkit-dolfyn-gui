@@ -4,11 +4,13 @@
 
 - Derived variable support (`velds`)
   - Compute velocity/turbulence-derived variables and save in output `.nc` files. `velds` settings are exposed in the workflow config, export sidebar, and codegen/export pipeline.
+- Nortek Aquadopp and Aquadopp Profiler support (`.aqd` / `.prf`), added upstream in MHKiT 1.1.0.
 
 ## Improvements
 
 - Export pipeline code now embedded directly rather than generated as a string.
 - Linux CI now installs graphics libraries required for the app to run headless.
+- Bumped MHKiT to `>=1.1.0`, installed via pip instead of conda-forge.
 
 ### Bug Fixes
 
