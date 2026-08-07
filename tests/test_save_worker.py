@@ -62,6 +62,7 @@ def test_save_worker_emits_per_job_progress(qtbot, tmp_path, fake_dolfyn):
 
     with qtbot.waitSignal(worker.all_done, timeout=5000):
         worker.start()
+    worker.wait(2000)
 
     assert progress == [0, 1]
     assert failures == []
@@ -80,6 +81,7 @@ def test_save_worker_failure_emits_failure(qtbot, tmp_path, fake_dolfyn):
 
     with qtbot.waitSignal(worker.all_done, timeout=5000):
         worker.start()
+    worker.wait(2000)
 
     assert len(failures) == 1
     assert failures[0].index == 0
@@ -98,6 +100,7 @@ def test_save_worker_handles_tuple_result_with_profile_index(qtbot, tmp_path, fa
 
     with qtbot.waitSignal(worker.all_done, timeout=5000):
         worker.start()
+    worker.wait(2000)
 
     assert len(saved) == 1
     # The dataset passed to dolfyn.save must be the selected profile.
@@ -120,6 +123,7 @@ def test_save_worker_injects_velds_when_included(qtbot, tmp_path, fake_dolfyn, m
 
     with qtbot.waitSignal(worker.all_done, timeout=5000):
         worker.start()
+    worker.wait(2000)
 
     inject_mock.assert_called_once_with(fake_ds)
     saved_ds = fake_dolfyn.save.call_args[0][0]
@@ -140,6 +144,7 @@ def test_save_worker_skips_velds_injection_when_excluded(qtbot, tmp_path, fake_d
 
     with qtbot.waitSignal(worker.all_done, timeout=5000):
         worker.start()
+    worker.wait(2000)
 
     inject_mock.assert_not_called()
     saved_ds = fake_dolfyn.save.call_args[0][0]
