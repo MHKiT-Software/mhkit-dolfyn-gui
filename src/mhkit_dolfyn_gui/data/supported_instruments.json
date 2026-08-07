@@ -1,5 +1,5 @@
 {
-  "generated_from": "mhkit v1.1.0",
+  "generated_from": "mhkit v1.1.1",
   "note": "DOLFyN dispatches readers by magic-byte sniffing, not by file extension. This file is generated from DOLFyN source by scripts/generate_supported_instruments.py \u2014 do not edit by hand. Each instrument carries a 'provenance' field describing where in DOLFyN each value was extracted.",
   "all_extensions": [
     ".000",
