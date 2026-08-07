@@ -1,3 +1,13 @@
+# v0.3.2: MHKiT 1.1.1
+
+### Bug Fixes
+
+- Bumped MHKiT to `>=1.1.1`, which fixes a Nortek reader edge case for data files with an odd number of bins (MHKiT-Python #459).
+
+### Notes
+
+- v0.3.1 was never published. A GitHub Actions outage on 2026-08-06 dropped the `main` push event that produces release builds, so no `v0.3.1` tag or binaries exist. The v0.3.1 Linux CI fix ships in this release.
+
 # v0.3.1: Linux CI Smoke Test Fix
 
 ### Bug Fixes
